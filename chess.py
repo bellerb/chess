@@ -1,3 +1,4 @@
+
 class Chess:
     def __init__(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
         self.x = ['a','b','c','d','e','f','g','h'] #Board x representation
@@ -97,29 +98,38 @@ class Chess:
         data = EPD.split(' ')
         if len(data) == 4:
             for x,rank in enumerate(data[0].split('/')):
-                for y,p in enumerate(rank):
+                y = 0
+                for p in rank:
                     if p.isdigit():
                         for i in range(int(p)):
-                            self.board[x][y+i] = 0
+                            self.board[x][y] = 0
+                            y += 1
                     else:
                         self.board[x][y] = self.notation[str(p).lower()]*(-1) if str(p).islower() else self.notation[str(p).lower()]
+                        y += 1
             self.p_move = 1 if data[1] == 'w' else -1
-            for c in data[2]:
-                if c == 'K':
-                    self.castling[0] = 1
-                elif c == 'Q':
-                    self.castling[1] = 1
-                elif c == 'k':
-                    self.castling[2] = 1
-                elif c == 'q':
-                    self.castling[3] = 1
+            if 'K' in data[2]:
+                self.castling[0] = 1
+            else:
+                self.castling[0] = 0
+            if 'Q' in data[2]:
+                self.castling[1] = 1
+            else:
+                self.castling[1] = 0
+            if 'k' in data[2]:
+                self.castling[2] = 1
+            else:
+                self.castling[2] = 0
+            if 'q' in data[2]:
+                self.castling[3] = 1
+            else:
+                self.castling[3] = 0
             self.en_passant = None if data[3] == '-' else self.board_2_array(data[3])
             return True
         else:
             return False
 
-    def log_move(self,part,cur_cord,next_cord,next_pos):
-        #castling with rook on h side o-o casteling with rook on a o-o-o
+    def log_move(self,part,cur_cord,next_cord,cur_pos,next_pos):
         #pawn promotion location=piece ex a8=Q
         #to remove ambiguity where multiple pieces could make the move add starting identifier after piece notation ex Rab8
         p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
@@ -132,6 +142,10 @@ class Chess:
             move += '#'
         elif self.is_check(moves) == True:
             move += '+'
+        if part == 6*self.p_move and next_pos[0]-cur_pos[0] == 2:
+            move = '0-0'
+        elif part == 6*self.p_move and next_pos[0]-cur_pos[0] == -2:
+            move = '0-0-0'
         self.log.append(move)
 
     def move(self,cur_pos,next_pos):
@@ -141,11 +155,35 @@ class Chess:
             part = self.board[cp[1]][cp[0]]
             if np == self.en_passant and (part == 1 or part == -1):
                 self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
-            self.log_move(part,cur_pos,next_pos,np)
+            self.log_move(part,cur_pos,next_pos,cp,np)
             if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
                 self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
+            elif part == 6*self.p_move and np[0]-cp[0] == 2:
+                self.board[np[1]][np[0]-1] = 4*self.p_move
+                self.board[np[1]][np[0]+1] = 0
+            elif part == 6*self.p_move and np[0]-cp[0] == -2:
+                self.board[np[1]][np[0]+1] = 4*self.p_move
+                self.board[np[1]][np[0]-2] = 0
             else:
                 self.en_passant = None
+            if part == 6*self.p_move:
+                if self.p_move == 1:
+                    self.castling[0] = 0
+                    self.castling[1] = 0
+                else:
+                    self.castling[2] = 0
+                    self.castling[3] = 0
+            elif part == 4*self.p_move:
+                if self.p_move == 1:
+                    if cp == (0,7):
+                        self.castling[1] = 0
+                    else:
+                        self.castling[0] = 0
+                else:
+                    if cp == (0,0):
+                        self.castling[3] = 0
+                    else:
+                        self.castling[2] = 0
             self.board[cp[1]][cp[0]] = 0
             self.board[np[1]][np[0]] = part
             return True
@@ -352,6 +390,10 @@ class Chess:
                 result.append((pos[0]+1,pos[1]-1))
             if pos[1]-1 >= 0 and pos[1]-1 <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and (game.board[pos[1]-1][pos[0]-1]*player < 0 or game.board[pos[1]-1][pos[0]-1] == 0):
                 result.append((pos[0]-1,pos[1]-1))
+            if (pos == (4,7) or pos == (4,0)) and game.board[pos[1]][pos[0]+1] == 0 and game.board[pos[1]][pos[0]+2] == 0 and ((game.castling[0] == 1 and game.p_move == 1) or (game.castling[2] == 1 and game.p_move == -1)):
+                result.append((pos[0]+2,pos[1]))
+            if (pos == (4,7) or pos == (4,0)) and game.board[pos[1]][pos[0]-1] == 0 and game.board[pos[1]][pos[0]-2] == 0 and ((game.castling[1] == 1 and game.p_move == 1) or (game.castling[3] == 1 and game.p_move == -1)):
+                result.append((pos[0]-2,pos[1]))
             return result
 
     class Queen:
@@ -421,8 +463,6 @@ class Chess:
             self.notation = 'R' #Chess notation
 
         def movement(game,player,pos):
-            #Add in castling support
-            #self.castling
             result = []
             check = [True,True,True,True]
             for c in range(1,8,1):
@@ -545,9 +585,7 @@ B,b = Bishop
 R,r = Rook
 Q,q = Queen
 K,k = King
-
 When asked where you want to moves please use the following cordinate system:
-
 a8 b8 c8 d8 e8 f8 g8 h8
 a7 b7 c7 d7 e7 f7 g7 h7
 a6 b6 c6 d6 e6 f6 g6 h6
@@ -575,7 +613,6 @@ a1 b1 c1 d1 e1 f1 g1 h1''')
             print('\n*********************\n      GAME OVER\n*********************\n')
             chess_game.display()
             print('Game Log:')
-            print(chess_game.log)
             print('\nGame Result:\n')
             if state == [0,0,1]:
                 print('BLACK WINS')
