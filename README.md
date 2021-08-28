@@ -28,4 +28,5 @@ The following is a program for playing chess in the console written in python3. 
 
 # Launch Instructions
 **(PVP)** <br>
-python3 chess.py
+step 1: cd [app directory] <br>
+step 2: python3 chess.py
