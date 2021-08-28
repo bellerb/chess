@@ -8,12 +8,12 @@ The following is a program for playing chess in the console written in python3. 
 #### Pieces
 * White = Upper Case
 * Black = Lower Case
-* P,p = Pawn
-* N,n = Knight
-* B,b = Bishop
-* R,r = Rook
-* Q,q = Queen
-* K,k = King
+* P,p = Pawn (1,-1)
+* N,n = Knight (2,-2)
+* B,b = Bishop (3,-3)
+* R,r = Rook (4,-4)
+* Q,q = Queen (5,-5)
+* K,k = King (6,-6)
 
 #### Board
 | a8 | b8 | c8 | d8 | e8 | f8 | g8 | h8 |
@@ -29,4 +29,4 @@ The following is a program for playing chess in the console written in python3. 
 # Launch Instructions
 **(PVP)** <br>
 step 1: cd [app directory] <br>
-step 2: python3 chess.py
+step 2: python3 main.py
