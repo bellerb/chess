@@ -1,4 +1,3 @@
-
 class Chess:
     def __init__(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
         self.x = ['a','b','c','d','e','f','g','h'] #Board x representation
@@ -9,6 +8,7 @@ class Chess:
 
     def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
         self.log = [] #Game log
+        self.init_pos = EPD #Inital position
         self.EPD_table = {} #EPD hashtable
         self.p_move = 1 #Current players move white = 1 black = -1
         self.castling = [1,1,1,1] #Castling control
@@ -214,11 +214,9 @@ class Chess:
                     p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
                     p_colour = 1 if part > 0 else -1
                     moves[f'{str(self.x[x]).upper() if p_colour > 0 else str(self.x[x]).lower()}{self.y[y]}'] = getattr(Chess,p_name).movement(self,p_colour,[x,y],capture=capture)
-        #print({k:[f'{self.x[x[0]]}{self.y[x[1]]}' for x in v] for k,v in moves.items()})
         return moves
 
     def is_checkmate(self,moves):
-        #Add in blocks
         k_pos = () #King position
         p_blocks = [] #Possible blocks
         o_moves = [] #Opponent moves
@@ -235,6 +233,7 @@ class Chess:
                 for m in a:
                     if m not in o_moves:
                         o_moves.append(m)
+        o_moves = [m for m in o_moves if m not in p_blocks]
         if len(k_pos) > 0 and k_pos[0] not in o_moves:
             return [0,0,0]
         elif len(k_pos) == 0:
@@ -246,7 +245,6 @@ class Chess:
             if False in [True if m in o_moves else False for m in k_pos[1]]:
                 self.log[-1] += '+' #Check
                 return [0,0,0]
-            print(p_blocks)
             if self.p_move == -1:
                 self.log[-1] += '#'
                 return [0,0,1] #Black wins
@@ -574,7 +572,7 @@ a4 b4 c4 d4 e4 f4 g4 h4
 a3 b3 c3 d3 e3 f3 g3 h3
 a2 b2 c2 d2 e2 f2 g2 h2
 a1 b1 c1 d1 e1 f1 g1 h1''')
-    chess_game = Chess(EPD='1b5k/7P/p1p2np1/2P2p2/PP3P2/4RQ1R/q1r4P/6K1 b - -')
+    chess_game = Chess(EPD='1b5k/7P/p1p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -')
     while True:
         if chess_game.p_move == 1:
             print('\nWhites Turn [UPPER CASE]\n')
@@ -589,19 +587,19 @@ a1 b1 c1 d1 e1 f1 g1 h1''')
         else:
             valid = True
         state = chess_game.is_end()
-        print(chess_game.log)
         if sum(state) > 0:
             print('\n*********************\n      GAME OVER\n*********************\n')
             chess_game.display()
-            print('Game Log:')
-            print(chess_game.log)
-            print('\nGame Result:\n')
+            print('Game Log:\n---------\n')
+            print(f'INITIAL POSITION = {chess_game.init_pos}')
+            print(f'MOVES = {chess_game.log}')
+            print('\nGame Result:\n------------\n')
             if state == [0,0,1]:
-                print('BLACK WINS')
+                print('BLACK WINS\n')
             elif state == [1,0,0]:
-                print('WHITE WINS')
+                print('WHITE WINS\n')
             else:
-                print('TIE GAME')
+                print('TIE GAME\n')
             break
         if valid == True:
             chess_game.p_move = chess_game.p_move * (-1)
