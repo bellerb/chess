@@ -2,8 +2,8 @@ class Chess:
     def __init__(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
         self.x = ['a','b','c','d','e','f','g','h'] #Board x representation
         self.y = ['8','7','6','5','4','3','2','1'] #Board y representation
-        self.parts = {1:'Pawn',2:'Knight',3:'Bishop',4:'Rook',5:'Queen',6:'King'} #Map of number to part
         self.notation = {'p':1,'n':2,'b':3,'r':4,'q':5,'k':6} #Map of notation to part number
+        self.parts = {1:'Pawn',2:'Knight',3:'Bishop',4:'Rook',5:'Queen',6:'King'} #Map of number to part
         self.reset(EPD=EPD) #Reset game board and state
 
     def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
@@ -195,6 +195,11 @@ class Chess:
                         self.castling[2] = 0
             self.board[cp[1]][cp[0]] = 0
             self.board[np[1]][np[0]] = part
+            hash = self.EPD_hash()
+            if hash in self.EPD_table:
+                self.EPD_table[hash] += 1
+            else:
+                self.EPD_table[hash] = 1
             return True
         return False
 
@@ -334,11 +339,6 @@ class Chess:
     def is_end(self):
         moves = self.possible_board_moves(capture=False)
         check_mate = self.is_checkmate(moves)
-        hash = self.EPD_hash()
-        if hash in self.EPD_table:
-            self.EPD_table[hash] += 1
-        else:
-            self.EPD_table[hash] = 1
         if sum(check_mate) > 0:
             return check_mate
         elif self.is_draw(moves,hash) == True:
