@@ -1,5 +1,6 @@
 from chess import Chess
-from ai_random.ai import Agent
+from ai_random.ai import Agent as w_agent
+from ai_ben.ai import Agent as b_agent
 
 print('''****************************
   Welcome to Console Chess
@@ -22,19 +23,19 @@ a3 b3 c3 d3 e3 f3 g3 h3
 a2 b2 c2 d2 e2 f2 g2 h2
 a1 b1 c1 d1 e1 f1 g1 h1''')
 
-white = 'human' #Values ['human','ai']
+white = 'ai' #Values ['human','ai']
 black = 'ai' #Values ['human','ai']
 chess_game = Chess()
 
 p_type = [0,0]
 if white == 'ai':
     p_type[0] = 1
-    w_bot = Agent() #Initailize white bot
+    w_bot = w_agent() #Initailize white bot
 else:
     p_type[0] = 0
 if black == 'ai':
     p_type[1] = 1
-    b_bot = Agent() #Initailize black bot
+    b_bot = b_agent() #Initailize black bot
 else:
     p_type[1] = 0
 

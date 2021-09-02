@@ -200,6 +200,7 @@ class Chess:
                 self.EPD_table[hash] += 1
             else:
                 self.EPD_table[hash] = 1
+            #self.p_move = self.p_move * (-1)
             return True
         return False
 
@@ -256,6 +257,8 @@ class Chess:
             else:
                 self.log[-1] += '#'
                 return [1,0,0] #White wins
+        else:
+            return [1,0,0] if self.p_move == 1 else [0,0,1]
 
     def fifty_move_rule(self,moves):
         if len(self.log) > 100:
