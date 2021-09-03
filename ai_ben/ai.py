@@ -1,5 +1,6 @@
 import math
 import numpy
+import random
 import pandas as pd
 from copy import deepcopy
 #from model import TransformerModel
@@ -11,13 +12,14 @@ class Agent:
         self.MCTS = MCTS()
 
     def choose_action(self,game):
+        #print(self.MCTS.tree)
         parent_hash = game.EPD_hash()
         if parent_hash not in self.MCTS.tree:
             self.MCTS.tree[parent_hash] = self.MCTS.Node()
         self.MCTS.Player = game.p_move
-        self.MCTS.search(game)
         b_action = (None,None)
         b_upper = float('-inf')
+        u_bank = {}
         for c,moves in game.possible_board_moves(capture=True).items():
             if len(moves) > 0 and ((c[0].isupper() and game.p_move == 1) or (c[0].islower() and game.p_move == -1)):
                 for n in moves:
@@ -25,13 +27,19 @@ class Agent:
                     if imag_game.move(c,f'{game.x[n[0]]}{game.y[n[1]]}') == True:
                         imag_game.p_move = imag_game.p_move * (-1)
                         hash = imag_game.EPD_hash()
+                        self.MCTS.search(imag_game)
                         if hash in self.MCTS.tree:
-                            u = self.MCTS.tree[hash].Q + self.MCTS.Cpuct * self.MCTS.tree[hash].P * math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)
-                            if u > b_upper:
-                                cur = c
-                                next = f'{game.x[n[0]]}{game.y[n[1]]}'
-        print(cur,next)
-
+                            #print(c,f'{game.x[n[0]]}{game.y[n[1]]}',self.MCTS.tree[hash].Q,self.MCTS.tree[hash].P)
+                            u_bank[f'{c}-{game.x[n[0]]}{game.y[n[1]]}'] = self.MCTS.tree[hash].Q + self.MCTS.Cpuct * self.MCTS.tree[hash].P * math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)
+                            #u = self.MCTS.tree[hash].Q + self.MCTS.Cpuct * self.MCTS.tree[hash].P * math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)
+                            #if u > b_upper:
+                                #cur = c
+                                #next = f'{game.x[n[0]]}{game.y[n[1]]}'
+                                #b_upper =  u
+        #print(cur,next)
+        m_bank = [k for k,v in u_bank.items() if v == max(u_bank.values())]
+        print(m_bank)
+        cur,next = random.choice(m_bank).split('-')
         '''
         state = self.encode_state(deepcopy(game))
         for cur_cord,m_bank in game.possible_board_moves(capture=True).items():
