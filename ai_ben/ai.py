@@ -11,7 +11,27 @@ class Agent:
         self.MCTS = MCTS()
 
     def choose_action(self,game):
-        cur,next = self.MCTS.search(game)
+        parent_hash = game.EPD_hash()
+        if parent_hash not in self.MCTS.tree:
+            self.MCTS.tree[parent_hash] = self.MCTS.Node()
+        self.MCTS.Player = game.p_move
+        self.MCTS.search(game)
+        b_action = (None,None)
+        b_upper = float('-inf')
+        for c,moves in game.possible_board_moves(capture=True).items():
+            if len(moves) > 0 and ((c[0].isupper() and game.p_move == 1) or (c[0].islower() and game.p_move == -1)):
+                for n in moves:
+                    imag_game = deepcopy(game)
+                    if imag_game.move(c,f'{game.x[n[0]]}{game.y[n[1]]}') == True:
+                        imag_game.p_move = imag_game.p_move * (-1)
+                        hash = imag_game.EPD_hash()
+                        if hash in self.MCTS.tree:
+                            u = self.MCTS.tree[hash].Q + self.MCTS.Cpuct * self.MCTS.tree[hash].P * math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)
+                            if u > b_upper:
+                                cur = c
+                                next = f'{game.x[n[0]]}{game.y[n[1]]}'
+        print(cur,next)
+
         '''
         state = self.encode_state(deepcopy(game))
         for cur_cord,m_bank in game.possible_board_moves(capture=True).items():
@@ -48,10 +68,17 @@ class MCTS:
         self.tree = {}
         self.Cpuct = 2
 
+    class Node:
+        def __init__(self):
+            self.Q = 0 #Reward
+            self.P = 0 #Policy
+            self.N = 0 #Visits
+            self.Player = None
+
     def search(self,game):
         parent_hash = game.EPD_hash()
         if parent_hash not in self.tree:
-            self.tree[parent_hash] = Node()
+            self.tree[parent_hash] = self.Node()
         #print(numpy.array(game.board))
         #print(game.EPD_hash())
         b_action = (None,None)
@@ -60,19 +87,19 @@ class MCTS:
             if len(moves) > 0 and ((cur[0].isupper() and game.p_move == 1) or (cur[0].islower() and game.p_move == -1)):
                 for next in moves:
                     imag_game = deepcopy(game)
-                    if imag_game.move(cur,f'{imag_game.x[next[0]]}{imag_game.y[next[1]]}') == True:
+                    if imag_game.move(cur,f'{game.x[next[0]]}{game.y[next[1]]}') == True:
+                        imag_game.p_move = imag_game.p_move * (-1)
                         hash = imag_game.EPD_hash()
-                        if hash not in self.tree:
-                            self.tree[hash] = Node()
-                        else:
-                            self.tree[hash].N += 1
-                        #print(numpy.array(imag_game.board))
-                        #print(imag_game.EPD_hash())
-                        #print('------')
                         state = imag_game.is_end()
-                        #imag_game.p_move = imag_game.p_move * (-1)
-                        if sum(state) > 0:
-                            if (state == [1,0,0] and game.p_move == 1) or (state == [0,0,1] and game.p_move == -1):
+                        if hash not in self.tree and sum(state) == 0:
+                            self.tree[hash] = self.Node()
+                            self.tree[hash].Q = 1 #Use NN output value
+                            self.tree[hash].P = 1 #Use NN output policy
+                            return self.tree[hash].Q, self.tree[hash].P
+                        elif sum(state) > 0:
+                            if hash not in self.tree:
+                                self.tree[hash] = self.Node()
+                            if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                                 print('WIN',state)
                                 self.tree[hash].Q = 3 #Win
                             elif state == [0,0,0]:
@@ -82,21 +109,13 @@ class MCTS:
                                 print('LOSS')
                                 self.tree[hash].Q = 0 #Loss
                             self.tree[hash].P = 1
+                            return self.tree[hash].Q, self.tree[hash].P
                         else:
-                            self.tree[hash].Q = 1
-                            self.tree[hash].P = 1
+                            self.tree[hash].Q, self.tree[hash].P = self.search(imag_game)
                         u = self.tree[hash].Q + self.Cpuct * self.tree[hash].P * math.sqrt(self.tree[parent_hash].N)/(1+self.tree[hash].N)
                         if u > b_upper:
-                            b_action = (cur,f'{imag_game.x[next[0]]}{imag_game.y[next[1]]}')
-                    else:
-                        continue
-
+                            b_action = (self.tree[hash].Q, self.tree[hash].P)
+                            b_upper = u
         self.tree[parent_hash].N += 1
         #print(b_action)
         return b_action
-
-class Node:
-    def __init__(self):
-        self.Q = 0 #Reward
-        self.P = 0 #Policy
-        self.N = 0 #Visits
