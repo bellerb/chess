@@ -6,11 +6,12 @@ class Chess:
         self.parts = {1:'Pawn',2:'Knight',3:'Bishop',4:'Rook',5:'Queen',6:'King'} #Map of number to part
         self.reset(EPD=EPD) #Reset game board and state
 
-    def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
+    def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -',p_type=[0,0]):
         self.log = [] #Game log
         self.init_pos = EPD #Inital position
         self.EPD_table = {} #EPD hashtable
         self.p_move = 1 #Current players move white = 1 black = -1
+        self.p_type = p_type
         self.castling = [1,1,1,1] #Castling control
         self.en_passant = None #En passant control
         self.board = [[0,0,0,0,0,0,0,0],
@@ -152,19 +153,13 @@ class Chess:
             part = self.board[cp[1]][cp[0]]
             if np == self.en_passant and (part == 1 or part == -1):
                 self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
-            if (part == 1 and np[1] == 0) or (part == -1 and np[1] == 7):
-                while True:
-                    n_part = input('\nPawn Promotion - What peice would you like to switch too:\n\n*Queen[q]\n*Bishop[b]\n*Knight[n]\n*Rook[r]\n')
-                    if str(n_part).lower() not in ['q','b','n','r','queen','bishop','knight','rook']:
-                        print('\nInvalid Option')
-                    else:
-                        break
-                if len(n_part) > 1:
-                    n_part = getattr(Chess,str(n_part).capitalize())().notation
-                self.log_move(part,cur_pos,next_pos,cp,np,n_part=n_part)
-                part = self.notation[str(n_part).lower()]*self.p_move
-            else:
-                self.log_move(part,cur_pos,next_pos,cp,np)
+            #if (part == 1 and np[1] == 0) or (part == -1 and np[1] == 7):
+                #n_part = self.pawn_promotion()
+                #self.log_move(part,cur_pos,next_pos,cp,np,n_part=n_part)
+                #part = self.notation[str(n_part).lower()]*self.p_move
+            #else:
+                #self.log_move(part,cur_pos,next_pos,cp,np)
+            self.log_move(part,cur_pos,next_pos,cp,np)
             if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
                 self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
             elif part == 6*self.p_move and np[0]-cp[0] == 2:
@@ -260,6 +255,18 @@ class Chess:
         else:
             return [1,0,0] if self.p_move == 1 else [0,0,1]
 
+    def pawn_promotion(self,n_part=None):
+        if n_part == None:
+            while True:
+                n_part = input('\nPawn Promotion - What peice would you like to switch too:\n\n*Queen[q]\n*Bishop[b]\n*Knight[n]\n*Rook[r]\n')
+                if str(n_part).lower() not in ['q','b','n','r','queen','bishop','knight','rook']:
+                    print('\nInvalid Option')
+                else:
+                    break
+            if len(n_part) > 1:
+                n_part = getattr(Chess,str(n_part).capitalize())().notation
+        return n_part
+
     def fifty_move_rule(self,moves):
         if len(self.log) > 100:
             for m in self.log[-100:]:
@@ -347,6 +354,14 @@ class Chess:
         elif self.is_draw(moves,hash) == True:
             return [0,1,0]
         return [0,0,0]
+
+    def check_state(self):
+        if self.p_move == 1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '8']:
+            return 'PP'
+        elif self.p_move == -1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '1']:
+            return 'PP'
+        else:
+            return None
 
     class King:
         def __init__(self):
@@ -555,27 +570,7 @@ class Chess:
             return result
 
 if __name__ == '__main__':
-    print('''****************************
-  Welcome to Console Chess
-****************************
-White = Upper Case
-Black = Lower Case
-P,p = Pawn
-N,n = Knight
-B,b = Bishop
-R,r = Rook
-Q,q = Queen
-K,k = King
-When asked where you want to moves please use the following cordinate system:
-a8 b8 c8 d8 e8 f8 g8 h8
-a7 b7 c7 d7 e7 f7 g7 h7
-a6 b6 c6 d6 e6 f6 g6 h6
-a5 b5 c5 d5 e5 f5 g5 h5
-a4 b4 c4 d4 e4 f4 g4 h4
-a3 b3 c3 d3 e3 f3 g3 h3
-a2 b2 c2 d2 e2 f2 g2 h2
-a1 b1 c1 d1 e1 f1 g1 h1''')
-    chess_game = Chess(EPD='1b5k/7P/p1p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -')
+    chess_game = Chess(EPD='1b4k1/p4Q1P/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 w - -')
     while True:
         if chess_game.p_move == 1:
             print('\nWhites Turn [UPPER CASE]\n')
@@ -589,6 +584,7 @@ a1 b1 c1 d1 e1 f1 g1 h1''')
             print('Invalid move')
         else:
             valid = True
+        print(chess_game.check_state())
         state = chess_game.is_end()
         if sum(state) > 0:
             print('\n*********************\n      GAME OVER\n*********************\n')
