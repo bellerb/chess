@@ -2,9 +2,7 @@ import math
 import torch
 import numpy as np
 import torch.nn as nn
-from train import predict
 import torch.nn.functional as F
-from process import pre_process
 
 """
 Transformer model
@@ -19,16 +17,16 @@ class TransformerModel(nn.Module):
     Description: Initailize transormer model class creating the appropiate layers
     Output: None
     """
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, padding_idx=143):
+    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, padding_idx=32):
         super(TransformerModel, self).__init__()
         from torch.nn import TransformerEncoder, TransformerEncoderLayer
         self.model_type = 'Transformer'
-        self.pos_encoder = PositionalEncoding(ninp, dropout) #Positional encoding layer
+        #self.pos_encoder = PositionalEncoding(ninp, dropout) #Positional encoding layer
         encoder_layers = TransformerEncoderLayer(ninp, nhead, nhid, dropout) #Encoder layers
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers) #Wrap all encoder nodes (multihead)
         self.encoder = nn.Embedding(ntoken, ninp, padding_idx=padding_idx) #Initial encoding of imputs embed layers
         self.ninp = ninp #Number of input items
-        self.decoder = nn.Linear(ninp, ntoken) #Decode layer
+        self.decoder = nn.Linear(ninp,3) #Decode layer
         self.softmax = nn.Softmax(dim=1)
         self.init_weights()
 
@@ -59,12 +57,33 @@ class TransformerModel(nn.Module):
     Output: pytorch tensor containing soft max probability for each token of the sequence
     """
     def forward(self, src, src_mask):
-        memory_mask = src_mask
+        #print(src)
         src = self.encoder(src) * math.sqrt(self.ninp)
-        src = self.pos_encoder(src)
-        output = self.transformer_encoder(src, src_mask) #Encoder memory
+        print(src)
+        print(src_mask)
+        #src = src * src_mask
+        print(src)
+        #src = self.pos_encoder(src)
+        output = self.transformer_encoder(src) #Encoder memory
+        #print(output.size())
         output = self.decoder(output) #Linear layer
+        #print(output.size())
         output = self.softmax(output) #Get softmax probability
+        return output
+
+
+    """
+    Input: model - pytorch model that you wish to make the predicitons with
+           data - pytorch tensors  containg the input data you want to pass to the model
+           device - pytorch device used to convert the mask to the proper format for the divice the model is run on
+    Description: Use the model to make a prediciton
+    Output: pytorch tensor containing the output of the model
+    """
+    def predict(self,data,device):
+        #optimizer.zero_grad()
+        #src_mask = self.generate_square_subsequent_mask(data.size(0)).to(device) #Generate square subsequent mask if data not right size
+        src_mask = torch.tensor([[[float(0.0) if int(data[0][x]) != 31 else float('-inf') for x in range(data.size(1))]]])
+        output = self.forward(data, src_mask) #Make predictions using the model
         return output
 
 """

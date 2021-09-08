@@ -31,3 +31,4 @@ index,token,description
 30,bpm,biship pawn promotion
 31,SEP,seperation token (SPECIAL)
 32,MASK,token used for masking (SPECIAL)
+33,PAD,token used for padding (SPECIAL)

@@ -6,12 +6,11 @@ class Chess:
         self.parts = {1:'Pawn',2:'Knight',3:'Bishop',4:'Rook',5:'Queen',6:'King'} #Map of number to part
         self.reset(EPD=EPD) #Reset game board and state
 
-    def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -',p_type=[0,0]):
+    def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
         self.log = [] #Game log
         self.init_pos = EPD #Inital position
         self.EPD_table = {} #EPD hashtable
         self.p_move = 1 #Current players move white = 1 black = -1
-        self.p_type = p_type
         self.castling = [1,1,1,1] #Castling control
         self.en_passant = None #En passant control
         self.board = [[0,0,0,0,0,0,0,0],
@@ -153,12 +152,6 @@ class Chess:
             part = self.board[cp[1]][cp[0]]
             if np == self.en_passant and (part == 1 or part == -1):
                 self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
-            #if (part == 1 and np[1] == 0) or (part == -1 and np[1] == 7):
-                #n_part = self.pawn_promotion()
-                #self.log_move(part,cur_pos,next_pos,cp,np,n_part=n_part)
-                #part = self.notation[str(n_part).lower()]*self.p_move
-            #else:
-                #self.log_move(part,cur_pos,next_pos,cp,np)
             self.log_move(part,cur_pos,next_pos,cp,np)
             if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
                 self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
@@ -265,22 +258,31 @@ class Chess:
                     break
             if len(n_part) > 1:
                 n_part = getattr(Chess,str(n_part).capitalize())().notation
-        return n_part
+        part = self.notation[str(n_part).lower()]*self.p_move
+        pos = self.board_2_array(self.log[-1])
+        self.board[pos[1]][pos[0]] = part
+        self.log[-1] += f'={str(n_part).upper()}'
+        return True
 
-    def fifty_move_rule(self,moves):
+    def fifty_move_rule(self,moves,choice=None):
         if len(self.log) > 100:
             for m in self.log[-100:]:
                 if 'x' in m or m[0].islower():
                     return False
         else:
             return False
-        while True:
-            choice = input('Fifty move rule - do you want to claim a draw? [Y/N]')
-            if choice.lower() == 'y' or choice.lower() == 'yes' or choice.lower() == '1':
-                return True
-            elif choice.lower() == 'n' or choice.lower() == 'no' or choice.lower() == '0':
-                return False
+        if choice == None:
+            while True:
+                choice = input('Fifty move rule - do you want to claim a draw? [Y/N]')
+                if choice.lower() == 'y' or choice.lower() == 'yes' or choice.lower() == '1':
+                    return True
+                elif choice.lower() == 'n' or choice.lower() == 'no' or choice.lower() == '0':
+                    return False
             print('Unsupported answer')
+        if choice.lower() == 'y' or choice.lower() == 'yes' or choice.lower() == '1':
+            return True
+        elif choice.lower() == 'n' or choice.lower() == 'no' or choice.lower() == '0':
+            return False
 
     def seventy_five_move_rule(self,moves):
         if len(self.log) > 150:
@@ -355,11 +357,18 @@ class Chess:
             return [0,1,0]
         return [0,0,0]
 
-    def check_state(self):
+    def check_state(self,hash):
         if self.p_move == 1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '8']:
-            return 'PP'
+            return 'PP' #Pawn promotion
         elif self.p_move == -1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '1']:
-            return 'PP'
+            return 'PP' #Pawn promotion
+        elif hash in self.EPD_table and self.EPD_table[hash] == 3:
+            return '3F' #3 Fold
+        elif len(self.log) > 100:
+            for m in self.log[-100:]:
+                if 'x' in m or m[0].islower():
+                    return None
+            return '50M' #50 move
         else:
             return None
 

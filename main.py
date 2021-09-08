@@ -62,6 +62,11 @@ while True:
         print('Invalid move')
     else:
         valid = True
+    if chess_game.check_state(chess_game.EPD_hash()) == 'PP':
+        if (chess_game.p_move == 1 and p_type[0] == 1) or (chess_game.p_move == -1 and p_type[1] == 1):
+            chess_game.pawn_promotion(n_part='Q') #Auto queen
+        else:
+            chess_game.pawn_promotion() #Pawn promotion found
     state = chess_game.is_end()
     if sum(state) > 0:
         print('\n*********************\n      GAME OVER\n*********************\n')
