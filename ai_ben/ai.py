@@ -1,16 +1,15 @@
-  
 import math
 import numpy
 import torch
 import random
 import pandas as pd
 from copy import deepcopy
-from ai_ben.model import TransformerModel
+#from ai_ben.model import TransformerModel
 
 class Agent:
     def __init__(self):
         self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
-        self.token_bank = pd.read_csv('ai_ben/token_bank.csv') #All tokens
+        #self.token_bank = pd.read_csv('ai_ben/token_bank.csv') #All tokens
         self.MCTS = MCTS(self)
 
     def choose_action(self,game):
@@ -61,6 +60,7 @@ class MCTS:
         self.Cpuct = 2
         self.Agent = agent
 
+        sinp = 139 #Size of input layer
         ntokens = len(self.Agent.token_bank) #The size of vocabulary
         emsize = 200 #Embedding dimension
         nhid = 200 #The dimension of the feedforward network model in nn.TransformerEncoder
@@ -68,7 +68,7 @@ class MCTS:
         nhead = 2 #The number of heads in the multiheadattention models
         dropout = 0.2 #The dropout value
         self.Device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #Set divice training will use
-        self.Model = TransformerModel(ntokens, emsize, nhead, nhid, nlayers, dropout).to(self.Device) #Initialize the transformer model
+        self.Model = TransformerModel(sinp, ntokens, emsize, nhead, nhid, nlayers, dropout).to(self.Device) #Initialize the transformer model
 
     class Node:
         def __init__(self):
@@ -108,17 +108,23 @@ class MCTS:
                             self.tree[hash].Q = 1 #Use NN output value
                             self.tree[hash].P = 1 #Use NN output policy
 
-                            print(cur)
                             action = self.Agent.encode_valid_action(8,8,game,cur,next)
                             model_input = [x for y in enc_state for x in y] + ['SEP'] + [x for y in action for x in y] #Flatened input
-                            print(model_input)
                             model_input = [self.Agent.token_bank['token'].eq(t).idxmax() for t in model_input] #Set tokens to numeric representation
-                            print(model_input)
-                            print(len(model_input))
-                            pred = self.Model.predict(torch.tensor([model_input]),self.Device)
-                            print(pred.size())
-                            #print(pred)
-                            print(self.greedy_prob_2_index(pred))
+                            v,p = self.Model(torch.tensor([model_input]))
+                            #state = [0,0,0]
+                            state[torch.argmax(v).item()] = 1
+                            if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
+                                #print('WIN',state)
+                                self.tree[hash].Q = 3 #Win
+                            elif state == [0,0,0]:
+                                #print('TIE')
+                                self.tree[hash].Q = 1 #Tie
+                            else:
+                                #print('LOSS')
+                                self.tree[hash].Q = -3 #Loss
+                            self.tree[hash].P = p
+                            print(self.tree[hash].Q, self.tree[hash].P)
                             quit()
 
                             return self.tree[hash].Q, self.tree[hash].P
@@ -145,13 +151,3 @@ class MCTS:
         self.tree[parent_hash].N += 1
         #print(b_action)
         return b_action
-
-    def greedy_prob_2_index(self,data):
-        #print(torch.argmax(data,dim=0).reshape(1))
-        result = []
-        '''
-        for y in data:
-            if len(y) > 0:
-                result.append([torch.argmax(x) for x in y if len(x.size()) > 0])
-        '''
-        return torch.argmax(data,dim=0)
