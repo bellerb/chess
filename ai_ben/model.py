@@ -9,36 +9,32 @@ Transformer model
 """
 class TransformerModel(nn.Module):
     """
-    Input: ntoken - integer containing the amount of total tokens
-           ninp - integer containing number of input layers
-           nhead - integer containing the number of heads in the multiheadattention models
-           nhid - integer containing the dimension of the feedforward network model in nn.TransformerEncoder
-           nlayers - integer containing the number of nn.TransformerEncoderLayer in nn.TransformerEncoder
+    Input: sinp - iteger representing the input size of the model
+           ntoken - integer representing the amount of total tokens
+           ninp - integer representing number of input layers
+           nhead - integer representing the number of heads in the multiheadattention models
+           nhid - integer representing the dimension of the feedforward network model in nn.TransformerEncoder
+           nlayers - integer representing the number of nn.TransformerEncoderLayer in nn.TransformerEncoder
     Description: Initailize transormer model class creating the appropiate layers
     Output: None
     """
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, padding_idx=32):
+    def __init__(self, sinp, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, padding_idx=9,mask_idx=10):
         super(TransformerModel, self).__init__()
         from torch.nn import TransformerEncoder, TransformerEncoderLayer
         self.model_type = 'Transformer'
-        #self.pos_encoder = PositionalEncoding(ninp, dropout) #Positional encoding layer
+        self.pos_encoder = PositionalEncoding(ninp, dropout) #Positional encoding layer
         encoder_layers = TransformerEncoderLayer(ninp, nhead, nhid, dropout) #Encoder layers
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers) #Wrap all encoder nodes (multihead)
         self.encoder = nn.Embedding(ntoken, ninp, padding_idx=padding_idx) #Initial encoding of imputs embed layers
         self.ninp = ninp #Number of input items
-        self.decoder = nn.Linear(ninp,3) #Decode layer
-        self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.Softmax(dim=1) #Softmax activation layer
+        self.sigmoid = nn.Sigmoid() #Sigmoid activation layer
+        self.gelu = nn.GELU() #GELU activation layer
+        self.flatten = nn.Flatten(start_dim=1) #Flatten layer
+        self.decoder = nn.Linear(ninp,1) #Decode layer
+        self.v_output = nn.Linear(sinp,3) #Decode layer
+        self.p_output = nn.Linear(sinp,1) #Decode layer
         self.init_weights()
-
-    """
-    Input: sz - integer containing the size of the matrix (square)
-    Description: masks inputs and their future postions
-    Output: pytorch tensor containing values used for mask (upper triangle set to 0)
-    """
-    def generate_square_subsequent_mask(self, sz):
-        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0)) #Set false values to infinite
-        return mask
 
     """
     Input: None
@@ -56,35 +52,19 @@ class TransformerModel(nn.Module):
     Description: forward pass of the model
     Output: pytorch tensor containing soft max probability for each token of the sequence
     """
-    def forward(self, src, src_mask):
-        #print(src)
+    def forward(self, src):
         src = self.encoder(src) * math.sqrt(self.ninp)
-        print(src)
-        print(src_mask)
-        #src = src * src_mask
-        print(src)
-        #src = self.pos_encoder(src)
+        src = self.pos_encoder(src)
         output = self.transformer_encoder(src) #Encoder memory
-        #print(output.size())
+        output = self.gelu(output)
         output = self.decoder(output) #Linear layer
-        #print(output.size())
-        output = self.softmax(output) #Get softmax probability
-        return output
-
-
-    """
-    Input: model - pytorch model that you wish to make the predicitons with
-           data - pytorch tensors  containg the input data you want to pass to the model
-           device - pytorch device used to convert the mask to the proper format for the divice the model is run on
-    Description: Use the model to make a prediciton
-    Output: pytorch tensor containing the output of the model
-    """
-    def predict(self,data,device):
-        #optimizer.zero_grad()
-        #src_mask = self.generate_square_subsequent_mask(data.size(0)).to(device) #Generate square subsequent mask if data not right size
-        src_mask = torch.tensor([[[float(0.0) if int(data[0][x]) != 31 else float('-inf') for x in range(data.size(1))]]])
-        output = self.forward(data, src_mask) #Make predictions using the model
-        return output
+        output = self.gelu(output)
+        output = self.flatten(output)
+        v = self.v_output(output) #Value output
+        v = self.softmax(v) #Get softmax probability
+        p = self.p_output(output) #Policy output
+        p = self.sigmoid(p)
+        return v,p
 
 """
 Encode input vectors with posistional data
