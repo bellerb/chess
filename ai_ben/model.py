@@ -18,7 +18,7 @@ class TransformerModel(nn.Module):
     Description: Initailize transormer model class creating the appropiate layers
     Output: None
     """
-    def __init__(self, sinp, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, padding_idx=9,mask_idx=10):
+    def __init__(self, sinp, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, padding_idx=32):
         super(TransformerModel, self).__init__()
         from torch.nn import TransformerEncoder, TransformerEncoderLayer
         self.model_type = 'Transformer'

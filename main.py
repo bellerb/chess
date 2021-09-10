@@ -53,6 +53,7 @@ while True:
             cur,next = w_bot.choose_action(chess_game)
         else:
             cur,next = b_bot.choose_action(chess_game)
+            
         print('What piece do you want to move?\n')
         print(cur.lower())
         print('\nWhere do you want to move the piece to?\n')
