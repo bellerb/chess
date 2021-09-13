@@ -1,6 +1,6 @@
 from chess import Chess
-from ai_random.ai import Agent as w_agent
-from ai_ben.ai import Agent as b_agent
+from ai_ben.ai import Agent as w_agent
+from ai_random.ai import Agent as b_agent
 
 print('''****************************
   Welcome to Console Chess
@@ -30,7 +30,7 @@ chess_game = Chess()
 p_type = [0,0]
 if white == 'ai':
     p_type[0] = 1
-    w_bot = w_agent() #Initailize white bot
+    w_bot = w_agent(max_depth=100) #Initailize white bot
 else:
     p_type[0] = 0
 if black == 'ai':
@@ -53,7 +53,7 @@ while True:
             cur,next = w_bot.choose_action(chess_game)
         else:
             cur,next = b_bot.choose_action(chess_game)
-            
+
         print('What piece do you want to move?\n')
         print(cur.lower())
         print('\nWhere do you want to move the piece to?\n')

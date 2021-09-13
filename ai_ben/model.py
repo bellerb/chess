@@ -26,6 +26,7 @@ class TransformerModel(nn.Module):
         encoder_layers = TransformerEncoderLayer(ninp, nhead, nhid, dropout) #Encoder layers
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers) #Wrap all encoder nodes (multihead)
         self.encoder = nn.Embedding(ntoken, ninp, padding_idx=padding_idx) #Initial encoding of imputs embed layers
+        self.padding_idx = padding_idx #Index of padding token
         self.ninp = ninp #Number of input items
         self.softmax = nn.Softmax(dim=1) #Softmax activation layer
         self.sigmoid = nn.Sigmoid() #Sigmoid activation layer
@@ -65,6 +66,28 @@ class TransformerModel(nn.Module):
         p = self.p_output(output) #Policy output
         p = self.sigmoid(p)
         return v,p
+
+    """
+    Input: source - pytorch tensor containing data you wish to get batches from
+           x - integer representing the index of the data you wish to gather
+    Description: Generate input and target data for training model
+    Output: list of pytorch tensors containing input and target data [x,y]
+    """
+    def get_batch(source,x,y):
+        data = torch.tensor([])
+        v_target = torch.tensor([])
+        p_target = torch.tensor([])
+        for i in range(y):
+            #Training data
+            if len(source) > 0 and x+i < len(source):
+                d_seq = source[x+i][:len(source[x+i])-4]
+                data = torch.cat((data,d_seq))
+                #Target data
+                v_seq = source[x+i][-4:-1]
+                v_target = torch.cat((v_target,v_seq))
+                p_seq = source[x+i][-1:]
+                p_target = torch.cat((p_target,p_seq))
+        return data.reshape(min(y,len(source[x:])),len(source[0])-4).to(torch.int64), v_target.reshape(min(y,len(source[x:])),3).to(torch.float), p_target.reshape(min(y,len(source[x:])),1).to(torch.float)
 
 """
 Encode input vectors with posistional data

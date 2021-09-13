@@ -260,9 +260,12 @@ class Chess:
                 n_part = getattr(Chess,str(n_part).capitalize())().notation
         part = self.notation[str(n_part).lower()]*self.p_move
         pos = self.board_2_array(self.log[-1])
-        self.board[pos[1]][pos[0]] = part
-        self.log[-1] += f'={str(n_part).upper()}'
-        return True
+        if pos != None:
+            self.board[pos[1]][pos[0]] = part
+            self.log[-1] += f'={str(n_part).upper()}'
+            return True
+        else:
+            return False
 
     def fifty_move_rule(self,moves,choice=None):
         if len(self.log) > 100:
