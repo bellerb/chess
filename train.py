@@ -8,7 +8,7 @@ from chess import Chess
 from ai_ben.ai import Agent
 from ai_ben.model import TransformerModel
 
-GAMES = 5
+GAMES = 500
 
 folder = 'ai_ben/data'
 filename = 'model.pth.tar'
@@ -25,8 +25,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #Set divic
 game_results = {'black':0,'white':0,'tie':0}
 for epoch in range(GAMES):
     log = []
-    w_bot = Agent(max_depth=random.choice([15,25,30,100,200,500])) #Current AI
-    b_bot = Agent(max_depth=random.choice([100,500])) #Current AI
+    #w_bot = Agent(max_depth=random.choice([100,200,500,800,1000])) #Current AI
+    #b_bot = Agent(max_depth=random.choice([100,200,500,800,1000])) #Current AI
+    w_bot = Agent(max_depth=1000) #Current AI
+    b_bot = Agent(max_depth=1000) #Current AI
     chess_game = Chess()
     while True:
         #chess_game.display()
@@ -99,7 +101,7 @@ for epoch in range(GAMES):
             torch.save({
                 'state_dict': model.state_dict(),
             }, filepath)
-            print(game_results)
+            print(epoch,game_results)
             break
         if valid == True:
             chess_game.p_move = chess_game.p_move * (-1)

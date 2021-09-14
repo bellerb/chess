@@ -30,12 +30,14 @@ chess_game = Chess()
 p_type = [0,0]
 if white == 'ai':
     p_type[0] = 1
-    w_bot = w_agent(max_depth=100) #Initailize white bot
+    #w_bot = w_agent(max_depth=100) #Initailize white bot
+    w_bot = b_agent() #Initailize black bot
 else:
     p_type[0] = 0
 if black == 'ai':
     p_type[1] = 1
-    b_bot = b_agent() #Initailize black bot
+    #b_bot = b_agent() #Initailize black bot
+    b_bot = w_agent(max_depth=100) #Initailize white bot
 else:
     p_type[1] = 0
 

@@ -31,7 +31,8 @@ class Agent:
                             imag_game.p_move = imag_game.p_move * (-1)
                             hash = imag_game.EPD_hash()
                             if hash in self.MCTS.tree:
-                                if self.MCTS.tree[hash].leaf == True and self.MCTS.tree[hash].Q == 3:
+                                #print(self.MCTS.tree[hash].leaf,self.MCTS.tree[hash].leaf == True,self.MCTS.tree[hash].Q == 6)
+                                if self.MCTS.tree[hash].leaf == True and self.MCTS.tree[hash].Q == 6:
                                     print('FOUND WIN')
                                     return c,f'{game.x[n[0]]}{game.y[n[1]]}'
                                 else:
@@ -110,10 +111,10 @@ class MCTS:
                             state = [0,1,0] #Auto tie
                         elif state == 'PP':
                             imag_game.pawn_promotion(n_part='Q') #Auto queen
-                        imag_game.p_move = imag_game.p_move * (-1)
-                        hash = imag_game.EPD_hash()
                         if state != [0,1,0]:
                             state = imag_game.is_end()
+                        imag_game.p_move = imag_game.p_move * (-1)
+                        hash = imag_game.EPD_hash()
                         if hash not in self.tree and sum(state) == 0:
                             #Use NN
                             self.tree[hash] = self.Node()
@@ -129,9 +130,9 @@ class MCTS:
                             self.tree[hash].P = p.item()
                         elif sum(state) > 0:
                             #End state found [leaf node]
-                            self.leaf = True
                             if hash not in self.tree:
                                 self.tree[hash] = self.Node()
+                            self.tree[hash].leaf = True
                             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                                 self.tree[hash].Q = 6 #Win
                                 self.tree[hash].P = 1
@@ -139,7 +140,7 @@ class MCTS:
                             elif state == [0,0,0]:
                                 self.tree[hash].Q = 1 #Tie
                             else:
-                                self.tree[hash].Q = -3 #Loss
+                                self.tree[hash].Q = -6 #Loss
                             self.tree[hash].P = 1
                         else:
                             v,p = self.search(imag_game)
