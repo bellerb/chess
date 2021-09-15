@@ -1,13 +1,13 @@
 # Chess
 
 ### Description
-The following is a program for playing chess in the console written in python3. The program has been built to use the computer chess standard EPD (extended possition description) for loading and exporting game positions. The program also makes use of standard chess notation (english) as you would in an actual chess tournament so that the games can be universialy understood and later analysed.
+The following is a program for playing chess in the console written in python3. The program has been built to use the computer chess standard EPD (extended position description) for loading and exporting game positions. The program also makes use of standard chess notation (English) as you would in an actual chess tournament so that the games can be universally understood and later analysed.
 
 ### Board Display
 
 #### Pieces
-* White = Upper Case
-* Black = Lower Case
+* White = Upper Case (Positive)
+* Black = Lower Case (Negative)
 * P,p = Pawn (1,-1)
 * N,n = Knight (2,-2)
 * B,b = Bishop (3,-3)
@@ -28,5 +28,48 @@ The following is a program for playing chess in the console written in python3. 
 
 # Launch Instructions
 **(PVP)** <br>
-step 1: cd [app directory] <br>
-step 2: python3 main.py
+step 1: open main.py and make sure the "white" & "black" global variable are as follows;
+
+```python
+white = 'human' #Values ['human','ai']
+black = 'human' #Values ['human','ai']
+```
+step 2: open your console
+step 3: type the following command "cd [app directory]" <br>
+step 4: type the following command "python3 main.py"
+
+**(PVAI)** <br>
+step 1: open main.py and make sure the "white" & "black" global variable are as follows;
+
+```python
+#Play as white
+white = 'human' #Values ['human','ai']
+black = 'ai' #Values ['human','ai']
+```
+or
+```python
+#Play as black
+white = 'ai' #Values ['human','ai']
+black = 'human' #Values ['human','ai']
+```
+
+step 2: makes sure you have imported the ai you wish to play
+
+```python
+from ai_ben.ai import Agent
+```
+
+step 3: make sure your ai is properly initialized
+
+```python
+#Play as white
+b_bot = Agent(max_depth=100) #Initailize white bot
+```
+or
+```python
+#Play as black
+w_bot = Agent(max_depth=100) #Initailize white bot
+```
+step 4: open your console
+step 5: type the following command "cd [app directory]" <br>
+step 6: type the following command "python3 main.py"
