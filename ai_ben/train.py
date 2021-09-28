@@ -17,15 +17,19 @@ GAMES = 10
 folder = 'ai_ben/data'
 filename = 'model.pth.tar'
 
-sinp = 64 #Size of input layer 8x8 board
-ntokens = 33 #The size of vocabulary
-emsize = 200 #Embedding dimension
-nhid = 200 #The dimension of the feedforward network model in nn.TransformerEncoder
-nlayers = 2 #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
-nhead = 2 #The number of heads in the multiheadattention models
-dropout = 0.2 #The dropout value
+#Model parameters
+with open(os.path.join(folder,'model_param.json')) as f:
+    m_param = json.load(f)
+sinp = m_param['input_size'] #Size of input layer 8x8 board
+ntokens = m_param['ntokens'] #The size of vocabulary
+emsize = m_param['emsize'] #Embedding dimension
+nhid = m_param['nhid'] #The dimension of the feedforward network model in nn.TransformerEncoder
+nlayers = m_param['nlayers'] #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
+nhead = m_param['nhead'] #The number of heads in the multiheadattention models
+dropout = m_param['dropout'] #The dropout value
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #Set divice training will use
 
+#Training parameters
 bsz = 20 #Batch size
 lr = 0.0005 #Learning rate
 total_loss = 0.0 #Initalize total loss
@@ -34,8 +38,8 @@ train_data = pd.DataFrame()
 game_results = {'black':0,'white':0,'tie':0}
 for epoch in range(GAMES):
     log = []
-    w_bot = Agent(search_amount=random.choice([50])) #Current AI
-    b_bot = Agent(search_amount=random.choice([50])) #Current AI
+    w_bot = Agent(search_amount=random.choice([50,100]),max_depth=random.choice([5,10,20])) #Current AI
+    b_bot = Agent(search_amount=random.choice([50,100]),max_depth=random.choice([5,10,20])) #Current AI
     chess_game = Chess()
     while True:
         #chess_game.display()

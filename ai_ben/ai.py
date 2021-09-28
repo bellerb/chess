@@ -1,5 +1,6 @@
 import os
 import math
+import json
 import numpy
 import torch
 import random
@@ -66,13 +67,15 @@ class MCTS:
         self.Agent = agent
         self.Player = None
         #Model Parameters
-        sinp = 64 #Size of input layer 8x8 board
-        ntokens = len(self.Agent.token_bank) #The size of vocabulary
-        emsize = 200 #Embedding dimension
-        nhid = 200 #The dimension of the feedforward network model in nn.TransformerEncoder
-        nlayers = 2 #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
-        nhead = 2 #The number of heads in the multiheadattention models
-        dropout = 0.2 #The dropout value
+        with open(os.path.join(folder,'model_param.json')) as f:
+            m_param = json.load(f)
+        sinp = m_param['input_size'] #Size of input layer 8x8 board
+        ntokens = m_param['ntokens'] #The size of vocabulary
+        emsize = m_param['emsize'] #Embedding dimension
+        nhid = m_param['nhid'] #The dimension of the feedforward network model in nn.TransformerEncoder
+        nlayers = m_param['nlayers'] #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
+        nhead = m_param['nhead'] #The number of heads in the multiheadattention models
+        dropout = m_param['dropout'] #The dropout value
         self.Device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #Set divice training will use
         self.Model = TransformerModel(sinp, ntokens, emsize, nhead, nhid, nlayers, dropout).to(self.Device) #Initialize the transformer model
         #Load Saved Model
