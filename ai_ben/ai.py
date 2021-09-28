@@ -17,6 +17,8 @@ class Agent:
     def choose_action(self,game):
         if self.MCTS.Player == None:
             self.MCTS.Player = game.p_move
+        for n in self.MCTS.tree:
+            self.MCTS.tree[n].max_depth = False
         parent_hash = game.EPD_hash()
         for x in range(self.search_amount):
             self.MCTS.depth = 0
@@ -33,7 +35,7 @@ class Agent:
                             if self.MCTS.tree[hash].leaf == True and self.MCTS.tree[hash].Q == 6:
                                 return c,f'{game.x[n[0]]}{game.y[n[1]]}'
                             else:
-                                print(f'{c}-{game.x[n[0]]}{game.y[n[1]]}',self.MCTS.tree[hash].Q,self.MCTS.tree[hash].P,math.sqrt(self.MCTS.tree[parent_hash].N),(1+self.MCTS.tree[hash].N),self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N))))
+                                #print(f'{c}-{game.x[n[0]]}{game.y[n[1]]}',self.MCTS.tree[hash].Q,self.MCTS.tree[hash].P,math.sqrt(self.MCTS.tree[parent_hash].N),(1+self.MCTS.tree[hash].N),(math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)),self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N))))
                                 u_bank[f'{c}-{game.x[n[0]]}{game.y[n[1]]}'] = self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)))
         m_bank = [k for k,v in u_bank.items() if v == max(u_bank.values())]
         if len(m_bank) > 0:
@@ -86,6 +88,7 @@ class MCTS:
             self.P = 0 #Policy
             self.N = 0 #Visits
             self.leaf = False #Leaf control
+            self.max_depth = False #Max depth control
 
     def search(self,game):
         self.depth += 1
@@ -166,7 +169,7 @@ class MCTS:
                                 break
                             imag_game.p_move = imag_game.p_move * (-1)
                             hash = imag_game.EPD_hash()
-                            if hash in self.tree:
+                            if hash in self.tree and self.tree[hash].max_depth == False:
                                 #print(self.tree[hash].Q, self.Cpuct, self.tree[hash].P, math.sqrt(self.tree[parent_hash].N), (1+self.tree[hash].N))
                                 u = self.tree[hash].Q + (self.Cpuct * self.tree[hash].P * (math.sqrt(self.tree[parent_hash].N)/(1+self.tree[hash].N)))
                                 if u > b_upper:
@@ -178,6 +181,8 @@ class MCTS:
                 v,p = self.search(b_action)
                 hash = b_action.EPD_hash()
                 if hash in self.tree:
+                    if self.depth == self.max_depth:
+                        self.tree[hash].max_depth = True
                     self.tree[hash].Q = v
                     self.tree[hash].P = p
                     return self.tree[hash].Q,self.tree[hash].P

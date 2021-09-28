@@ -238,7 +238,8 @@ class Chess:
                         k_pos = ((x,y),[])
         if len(k_pos) > 0 and k_pos[0] in o_moves:
             if False in [True if m in o_moves else False for m in k_pos[1]]:
-                self.log[-1] += '+' #Check
+                if self.log[-1][-1] is not '+':
+                    self.log[-1] += '+' #Check
                 return [0,0,0]
             if check == False:
                 moves = self.possible_board_moves(capture=False)
