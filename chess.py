@@ -210,13 +210,14 @@ class Chess:
                     moves[f'{str(self.x[x]).upper() if p_colour > 0 else str(self.x[x]).lower()}{self.y[y]}'] = getattr(Chess,p_name).movement(self,p_colour,[x,y],capture=capture)
         return moves
 
-    def is_checkmate(self,moves):
+    def is_checkmate(self,moves,check=False):
         k_pos = () #King position
         p_blocks = [] #Possible blocks
         o_moves = [] #Opponent moves
         for p,a in moves.items():
+            pos = self.board_2_array(p)
             if (str(p[0]).isupper() and self.p_move == -1) or (str(p[0]).islower() and self.p_move == 1):
-                pos = self.board_2_array(p)
+                #pos = self.board_2_array(p)
                 if self.board[pos[1]][pos[0]] == self.King().value * (self.p_move*(-1)):
                     k_pos = (pos,a)
                 else:
@@ -239,6 +240,9 @@ class Chess:
             if False in [True if m in o_moves else False for m in k_pos[1]]:
                 self.log[-1] += '+' #Check
                 return [0,0,0]
+            if check == False:
+                moves = self.possible_board_moves(capture=False)
+                self.is_checkmate(moves,check=True)
             if self.p_move == -1:
                 self.log[-1] += '#'
                 return [0,0,1] #Black wins
@@ -352,7 +356,21 @@ class Chess:
         return False
 
     def is_end(self):
-        moves = self.possible_board_moves(capture=False)
+        w_king = False
+        b_king = False
+        for y,row in enumerate(self.board):
+            for x,peice in enumerate(row):
+                if self.board[y][x] == self.King().value * (-1):
+                    b_king = True
+                elif self.board[y][x] == self.King().value:
+                    w_king = True
+        if w_king == False and b_king == False:
+            return [0,1,0]
+        elif w_king == False:
+            return [0,0,1]
+        elif b_king == False:
+            return [1,0,0]
+        moves = self.possible_board_moves(capture=True)
         check_mate = self.is_checkmate(moves)
         if sum(check_mate) > 0:
             return check_mate
@@ -361,9 +379,9 @@ class Chess:
         return [0,0,0]
 
     def check_state(self,hash):
-        if self.p_move == 1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '8']:
+        if len(self.log) > 0 and self.p_move == 1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '8']:
             return 'PP' #Pawn promotion
-        elif self.p_move == -1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '1']:
+        elif len(self.log) > 0 and self.p_move == -1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '1']:
             return 'PP' #Pawn promotion
         elif hash in self.EPD_table and self.EPD_table[hash] == 3:
             return '3F' #3 Fold

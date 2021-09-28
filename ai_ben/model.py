@@ -34,7 +34,7 @@ class TransformerModel(nn.Module):
         self.flatten = nn.Flatten(start_dim=1) #Flatten layer
         self.decoder = nn.Linear(ninp,1) #Decode layer
         self.v_output = nn.Linear(sinp,3) #Decode layer
-        self.p_output = nn.Linear(sinp,1) #Decode layer
+        self.p_output = nn.Linear(sinp,4096) #Decode layer
         self.init_weights()
 
     """
@@ -80,14 +80,14 @@ class TransformerModel(nn.Module):
         for i in range(y):
             #Training data
             if len(source) > 0 and x+i < len(source):
-                d_seq = source[x+i][:len(source[x+i])-4]
+                d_seq = source[x+i][:len(source[x+i])-4099]
                 data = torch.cat((data,d_seq))
                 #Target data
-                v_seq = source[x+i][-4:-1]
+                v_seq = source[x+i][-3:]
                 v_target = torch.cat((v_target,v_seq))
-                p_seq = source[x+i][-1:]
+                p_seq = source[x+i][-4099:-3]
                 p_target = torch.cat((p_target,p_seq))
-        return data.reshape(min(y,len(source[x:])),len(source[0])-4).to(torch.int64), v_target.reshape(min(y,len(source[x:])),3).to(torch.float), p_target.reshape(min(y,len(source[x:])),1).to(torch.float)
+        return data.reshape(min(y,len(source[x:])),len(source[0])-4099).to(torch.int64), v_target.reshape(min(y,len(source[x:])),3).to(torch.float), p_target.reshape(min(y,len(source[x:])),4096).to(torch.float)
 
 """
 Encode input vectors with posistional data
