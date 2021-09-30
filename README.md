@@ -70,6 +70,6 @@ or
 #Play as black
 w_bot = Agent(max_depth=100) #Initailize white bot
 ```
-step 4: open your console
+step 4: open your console <br>
 step 5: type the following command "cd [app directory]" <br>
 step 6: type the following command "python3 main.py"
