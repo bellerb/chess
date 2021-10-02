@@ -1,6 +1,7 @@
 import os
 import time
 import math
+import json
 import torch
 import random
 import pandas as pd
@@ -12,7 +13,7 @@ from chess import Chess
 from ai_ben.ai import Agent
 from ai_ben.model import TransformerModel
 
-GAMES = 10
+GAMES = 1
 
 folder = 'ai_ben/data'
 filename = 'model.pth.tar'
@@ -42,13 +43,13 @@ for epoch in range(GAMES):
     b_bot = Agent(search_amount=random.choice([50,100]),max_depth=random.choice([5,10,20])) #Current AI
     chess_game = Chess()
     while True:
-        #chess_game.display()
+        chess_game.display()
         if chess_game.p_move == 1:
             cur,next = w_bot.choose_action(chess_game)
-            #cur = input('What piece do you want to move?\n')
-            #next = input('Where do you want to move the piece to?\n')
         else:
-            cur,next = b_bot.choose_action(chess_game)
+            #cur,next = b_bot.choose_action(chess_game)
+            cur = input('What piece do you want to move?\n')
+            next = input('Where do you want to move the piece to?\n')
         print(f'w {cur.lower()}-->{next.lower()}') if chess_game.p_move > 0 else print(f'b {cur.lower()}-->{next.lower()}')
         valid = False
         if chess_game.move(cur,next) == False:

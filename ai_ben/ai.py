@@ -8,13 +8,27 @@ import pandas as pd
 from copy import deepcopy
 from ai_ben.model import TransformerModel
 
+"""
+Class used to create game playing AI
+"""
 class Agent:
+    """
+    Input: max_depth - integer representing the max depth in the graph the angent is alowed (Default=5) [OPTIONAL]
+           search_amount - integer representing the amount of searches you want to run (Default=50) [OPTIONAL]
+    Description: AI initail variables
+    Output: None
+    """
     def __init__(self,max_depth=5,search_amount=50):
         self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
         self.token_bank = pd.read_csv('ai_ben/data/token_bank.csv') #All tokens
         self.MCTS = MCTS(self,max_depth=max_depth)
         self.search_amount = search_amount
 
+    """
+    Input: game - object containing the game current state
+    Description: Main entrance point for AI to make moves from [This is the function called when playing games]
+    Output: tuple of strings representing the curent and next moves for the AI to make
+    """
     def choose_action(self,game):
         if self.MCTS.Player == None:
             self.MCTS.Player = game.p_move
@@ -43,6 +57,11 @@ class Agent:
             cur,next = random.choice(m_bank).split('-')
         return cur,next
 
+    """
+    Input: game - object containing the game current state
+    Description: encode the game board as tokens for the NN
+    Output: list containing integers representing a tokenized game board
+    """
     def encode_state(self,game):
         temp_board = deepcopy(game.board)
         for y,row in enumerate(temp_board):
@@ -58,14 +77,24 @@ class Agent:
             result = []
         return result
 
+"""
+Monte Carlo Tree Search algorithm used to search game tree for the best move
+"""
 class MCTS:
-    def __init__(self,agent,max_depth=5,folder='ai_ben/data',filename = 'model.pth.tar'):
-        self.max_depth = max_depth
-        self.depth = 0
-        self.tree = {}
-        self.Cpuct = 0.77
-        self.Agent = agent
-        self.Player = None
+    """
+    Input: max_depth - integer representing the max depth in the graph the angent is alowed (Default=5) [OPTIONAL]
+           folder - string representing the location of the folder storing the model parameters (Default='ai_ben/data') [OPTIONAL]
+           filename - string representing the model name (Default='model.pth.tar') [OPTIONAL]
+    Description: MCTS initail variables
+    Output: None
+    """
+    def __init__(self,max_depth=5,folder='ai_ben/data',filename = 'model.pth.tar'):
+        self.tree = {} #Game tree
+        self.Cpuct = 0.77 #Exploration hyper parameter
+        self.Player = None #What player is searching
+        self.depth = 0 #Curent node depth
+        self.max_depth = max_depth #Max allowable depth
+
         #Model Parameters
         with open(os.path.join(folder,'model_param.json')) as f:
             m_param = json.load(f)
@@ -84,8 +113,15 @@ class MCTS:
             checkpoint = torch.load(filepath, map_location=self.Device)
             self.Model.load_state_dict(checkpoint['state_dict'])
 
-
+    """
+    Node for each state in the game tree
+    """
     class Node:
+        """
+        Input: None
+        Description: MCTS initail variables
+        Output: None
+        """
         def __init__(self):
             self.Q = 0 #Reward
             self.P = 0 #Policy
@@ -93,6 +129,11 @@ class MCTS:
             self.leaf = False #Leaf control
             self.max_depth = False #Max depth control
 
+    """
+    Input: game - object containing the game current state
+    Description: Search the game tree using upper confidence value
+    Output: tuple of integers representing node reward and policy values
+    """
     def search(self,game):
         self.depth += 1
         parent_hash = game.EPD_hash()
@@ -123,7 +164,7 @@ class MCTS:
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
         if self.tree[parent_hash].Q == 0:
             #Use NN
-            enc_state = self.Agent.encode_state(game)
+            enc_state = Agent().encode_state(game)
             v,p = self.Model(torch.tensor([enc_state]))
             state[torch.argmax(v).item()] = 1
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
