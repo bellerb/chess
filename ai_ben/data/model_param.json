@@ -1,0 +1,9 @@
+{
+  "input_size":64,
+  "ntokens":33,
+  "emsize":200,
+  "nhid":200,
+  "nlayers":2,
+  "nhead":2,
+  "dropout":0.2
+}

@@ -15,6 +15,8 @@ class TransformerModel(nn.Module):
            nhead - integer representing the number of heads in the multiheadattention models
            nhid - integer representing the dimension of the feedforward network model in nn.TransformerEncoder
            nlayers - integer representing the number of nn.TransformerEncoderLayer in nn.TransformerEncoder
+           dropout - integer representing the dropout percentage you want to use (Default=0.5) [OPTIONAL]
+           padding_indx - integer representing the index of the padding token (Default=32) [OPTIONAL]
     Description: Initailize transormer model class creating the appropiate layers
     Output: None
     """
@@ -49,9 +51,8 @@ class TransformerModel(nn.Module):
 
     """
     Input: src - pytorch tensor containing the input sequence for the model
-           src_mask - pytorch tensor containing the src mask to multiply the input sequence by
     Description: forward pass of the model
-    Output: pytorch tensor containing soft max probability for each token of the sequence
+    Output: tuple containing pytorch tensors representing reward and policy
     """
     def forward(self, src):
         src = self.encoder(src) * math.sqrt(self.ninp)
@@ -70,6 +71,7 @@ class TransformerModel(nn.Module):
     """
     Input: source - pytorch tensor containing data you wish to get batches from
            x - integer representing the index of the data you wish to gather
+           y - integer representing the amount of rows you want to grab
     Description: Generate input and target data for training model
     Output: list of pytorch tensors containing input and target data [x,y]
     """
@@ -95,6 +97,8 @@ Encode input vectors with posistional data
 class PositionalEncoding(nn.Module):
     """
     Input: d_model - integer containing the size of the data model input
+           dropout - integer representing the dropout percentage you want to use (Default=0.1) [OPTIONAL]
+           max_len - integer representing the max amount of tokens in a input (Default=5000) [OPTIONAL]
     Description: Initailize positional encoding layer
     Output: None
     """
