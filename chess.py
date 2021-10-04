@@ -248,11 +248,12 @@ class Chess:
     Output: boolean representing the state of the player move
     """
     def valid_move(self,cur_pos,next_pos):
-        part = self.board[cur_pos[1]][cur_pos[0]]
-        if part * self.p_move > 0 and part != 0:
-            p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
-            if next_pos in getattr(Chess,p_name).movement(self,self.p_move,cur_pos,capture=True):
-                return True
+        if cur_pos != None and next_pos != None:
+            part = self.board[cur_pos[1]][cur_pos[0]]
+            if part * self.p_move > 0 and part != 0:
+                p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
+                if next_pos in getattr(Chess,p_name).movement(self,self.p_move,cur_pos,capture=True):
+                    return True
         return False
 
     """
@@ -276,14 +277,14 @@ class Chess:
     Description: determine if the current game state results in a check mate or not
     Output: list representing current state of the game
     """
-    def is_checkmate(self,moves,check=False):
+    def is_checkmate(self,moves):
         k_pos = () #King position
         p_blocks = [] #Possible blocks
-        o_moves = [] #Opponent moves
+        u_moves = {} #User potential moves
+        #Sort all possible moves
         for p,a in moves.items():
             pos = self.board_2_array(p)
             if (str(p[0]).isupper() and self.p_move == -1) or (str(p[0]).islower() and self.p_move == 1):
-                #pos = self.board_2_array(p)
                 if self.board[pos[1]][pos[0]] == self.King().value * (self.p_move*(-1)):
                     k_pos = (pos,a)
                 else:
@@ -291,25 +292,36 @@ class Chess:
                         if m not in p_blocks:
                             p_blocks.append(m)
             else:
-                for m in a:
-                    if m not in o_moves:
-                        o_moves.append(m)
-        o_moves = [m for m in o_moves if m not in p_blocks]
-        if len(k_pos) > 0 and k_pos[0] not in o_moves:
+                if pos not in u_moves:
+                    u_moves[pos] = a
+        #Parse all blocked moves
+        p_moves = [m for a in u_moves.values() for m in a]
+        g_moves = []
+        for m in u_moves:
+            if m not in p_blocks:
+                for a in u_moves[m]:
+                    if (a not in p_blocks) and a not in g_moves:
+                        g_moves.append(a)
+        #Check if checkmate is in posible moves
+        if len(k_pos) > 0 and k_pos[0] not in p_moves:
             return [0,0,0]
         elif len(k_pos) == 0:
             for y,row in enumerate(self.board):
-                for x,peice in enumerate(row):
-                    if self.board[y][x] == self.King().value * (self.p_move*(-1)):
-                        k_pos = ((x,y),[])
-        if len(k_pos) > 0 and k_pos[0] in o_moves:
-            if False in [True if m in o_moves else False for m in k_pos[1]]:
-                if self.log[-1][-1] is not '+':
-                    self.log[-1] += '+' #Check
-                return [0,0,0]
-            if check == False:
-                moves = self.possible_board_moves(capture=False)
-                self.is_checkmate(moves,check=True)
+                if self.King().value * (self.p_move*(-1)) in row:
+                    k_pos = ((row.index(self.King().value*(self.p_move*(-1))),y),[])
+                    break
+        if len(k_pos) > 0 and k_pos[0] in p_moves:
+            for m in k_pos[1]:
+                if m not in g_moves:
+                    i_game = deepcopy(self)
+                    i_game.p_move = i_game.p_move * (-1)
+                    i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}',f'{self.x[m[0]]}{self.y[m[1]]}')
+                    i_game.p_move = i_game.p_move * (-1)
+                    i_moves = i_game.possible_board_moves(capture=True)
+                    if True not in [True for m in i_moves if k_pos[0] in i_moves[m]]:
+                        if len(self.log) > 0 and self.log[-1][-1] is not '+':
+                            self.log[-1] += '+' #Check
+                        return [0,0,0]
             if self.p_move == -1:
                 self.log[-1] += '#'
                 return [0,0,1] #Black wins
@@ -803,7 +815,8 @@ class Chess:
             return result
 
 if __name__ == '__main__':
-    chess_game = Chess(EPD='1b4k1/p4Q1P/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 w - -')
+    chess_game = Chess(EPD='1b4k1/Q7/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -')
+    #chess_game = Chess()
     while True:
         if chess_game.p_move == 1:
             print('\nWhites Turn [UPPER CASE]\n')
@@ -817,7 +830,7 @@ if __name__ == '__main__':
             print('Invalid move')
         else:
             valid = True
-        print(chess_game.check_state())
+        #print(chess_game.check_state())
         state = chess_game.is_end()
         if sum(state) > 0:
             print('\n*********************\n      GAME OVER\n*********************\n')
