@@ -34,9 +34,20 @@ step 1: open main.py and make sure the "white" & "black" global variable are as 
 white = 'human' #Values ['human','ai']
 black = 'human' #Values ['human','ai']
 ```
-step 2: open your console
-step 3: type the following command "cd [app directory]" <br>
-step 4: type the following command "python3 main.py"
+setp 2: make sure your game is set to use the initial board position you would like
+
+```python
+#Default
+chess_game = Chess() #Uses 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -' as EPD hash
+```
+or
+```python
+#Custom starting position
+chess_game = Chess(EPD='1b4k1/Q7/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -') #Any EPD hash you want to start with
+```
+step 3: open your console <br>
+step 4: type the following command "cd [app directory]" <br>
+step 5: type the following command "python3 main.py"
 
 **(PVAI)** <br>
 step 1: open main.py and make sure the "white" & "black" global variable are as follows;
@@ -70,6 +81,18 @@ or
 #Play as black
 w_bot = Agent(max_depth=100) #Initailize white bot
 ```
-step 4: open your console <br>
-step 5: type the following command "cd [app directory]" <br>
-step 6: type the following command "python3 main.py"
+setp 4: make sure your game is set to use the initial board position you would like
+
+```python
+#Default
+chess_game = Chess() #Uses 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -' as EPD hash
+```
+or
+```python
+#Custom starting position
+chess_game = Chess(EPD='1b4k1/Q7/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -') #Any EPD hash you want to start with
+```
+
+step 5: open your console <br>
+step 6: type the following command "cd [app directory]" <br>
+step 7: type the following command "python3 main.py"
