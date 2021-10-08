@@ -17,7 +17,7 @@ from ai_ben.ai import Agent,MCTS
 from ai_ben.model import TransformerModel
 
 def play_game(game_name):
-    bot = deepcopy(Agent(search_amount=random.choice([50,75,100]),max_depth=random.choice([5,6,7,8,9,10])))
+    bot = deepcopy(Agent(search_amount=random.choice([50,75,100]),max_depth=random.choice([5,6,7,8,9,10]),train=True))
     log = []
     chess_game = deepcopy(Chess())
     while True:
@@ -33,7 +33,7 @@ def play_game(game_name):
             next_pos = chess_game.board_2_array(next)
             log.append({**{f'state{i}':float(s) for i,s in enumerate(MCTS().encode_state(chess_game)[0])},
                         **{f'action{x}':1 if x == ((cur_pos[0]+(cur_pos[1]*8))*64)+(next_pos[0]+(next_pos[1]*8)) else 0 for x in range(4096)}})
-        print(f'GAME-{game_name} MOVE:{len(log)} w {cur.lower()}-->{next.lower()}') if chess_game.p_move > 0 else print(f'GAME-{game_name} MOVE:{len(log)} b {cur.lower()}-->{next.lower()}')
+        print(f'w {cur.lower()}-->{next.lower()} | GAME-{game_name} MOVE:{len(log)} HASH:{chess_game.EPD_hash()}\n') if chess_game.p_move > 0 else print(f'b {cur.lower()}-->{next.lower()} | GAME-{game_name} MOVE:{len(log)} HASH:{chess_game.EPD_hash()}\n')
         chess_game.display()
         if chess_game.check_state(chess_game.EPD_hash()) == 'PP':
             chess_game.pawn_promotion(n_part='Q') #Auto queen
@@ -44,6 +44,8 @@ def play_game(game_name):
             for i,x in enumerate(state):
                 game_train_data[f'value{i}'] = [x]*len(log)
                 game_train_data[f'value{i}'] = game_train_data[f'value{i}'].astype(float)
+            if len(bot.log) > 0:
+                game_train_data = game_train_data.append(pd.DataFrame(bot.log).drop_duplicates(),ignore_index=True)
             break
         if valid == True:
             chess_game.p_move = chess_game.p_move * (-1)
@@ -58,14 +60,15 @@ def multi_process(func,workers=None):
         return data
 
 if __name__ == '__main__':
-    GAMES = 1
-    THREADS = 3
+    GAMES = 1 #Games to play on each board
+    BOARDS = 2 #Amount of boards to play on at a time
 
-    folder = 'ai_ben/data'
-    filename = 'model.pth.tar'
+    folder = 'ai_ben/data' #Folder name where data is saved
+    parameters = 'model_param.json' #Model parameters filename
+    model_weights = 'model.pth.tar' #Model saved weights filename
 
     #Model parameters
-    with open(os.path.join(folder,'model_param.json')) as f:
+    with open(os.path.join(folder,parameters)) as f:
         m_param = json.load(f)
     sinp = m_param['input_size'] #Size of input layer 8x8 board
     ntokens = m_param['ntokens'] #The size of vocabulary
@@ -85,9 +88,8 @@ if __name__ == '__main__':
     game_results = {'black':0,'white':0,'tie':0}
     for epoch in range(GAMES):
         print('STARTING GAMES')
-        func = [{'name':f'game-{x}','func':play_game,'args':(x)} for x in range(THREADS)]
-        games = multi_process(func,workers=THREADS)
-        print(games)
+        func = [{'name':f'game-{x}','func':play_game,'args':(x)} for x in range(BOARDS)]
+        games = multi_process(func,workers=BOARDS)
         for g in games:
             state,game_train_data = games[g]
             if state == [0,0,1]:
@@ -99,22 +101,22 @@ if __name__ == '__main__':
             else:
                 print('TIE GAME\n')
                 game_results['tie'] += 1
-            print(game_train_data)
             train_data = train_data.append(game_train_data,ignore_index=True)
-        if (epoch * THREADS) % 2 == 0 or epoch == GAMES-1:
-            train_data = train_data.sample(frac=1).reset_index(drop=True)
-            print(train_data)
+        if (epoch * BOARDS) % 2 == 0 or epoch == GAMES-1:
+            #Load saved model
             model = TransformerModel(sinp, ntokens, emsize, nhead, nhid, nlayers, dropout).to(device) #Initialize the transformer model
-            filepath = os.path.join(folder, filename)
+            filepath = os.path.join(folder, model_weights)
             if os.path.exists(filepath):
                 checkpoint = torch.load(filepath, map_location=device)
                 model.load_state_dict(checkpoint['state_dict'])
-
-            criterion = torch.nn.BCELoss()
+            #Initailize training
+            criterion = torch.nn.BCELoss() #Binary cross entropy loss
             optimizer = torch.optim.SGD(model.parameters(), lr=lr) #Optimization algorithm using stochastic gradient descent
             model.train() #Turn on the train mode
             start_time = time.time() #Get time of starting process
-            train_data = torch.tensor(train_data.values)
+            train_data = train_data.sample(frac=1).reset_index(drop=True) #Shuffle training data
+            train_data = torch.tensor(train_data.values) #Set training data to a tensor
+            #Start training model
             for batch, i in enumerate(range(0, train_data.size(0) - 1, bsz)):
                 data, v_targets, p_targets = TransformerModel.get_batch(train_data,i,bsz) #Get batch data with the selected targets being masked
                 output = model(data) #Make prediction using the model
@@ -125,7 +127,8 @@ if __name__ == '__main__':
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
                 optimizer.step()
                 total_loss += loss.item() #Increment total loss
-            filepath = os.path.join(folder, filename)
+            #Save updated model
+            filepath = os.path.join(folder, model_weights)
             if not os.path.exists(folder):
                 os.mkdir(folder)
             torch.save({
