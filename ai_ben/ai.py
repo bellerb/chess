@@ -18,9 +18,11 @@ class Agent:
     Description: AI initail variables
     Output: None
     """
-    def __init__(self,max_depth=5,search_amount=50):
-        self.MCTS = deepcopy(MCTS(max_depth=max_depth))
-        self.search_amount = search_amount
+    def __init__(self,max_depth=5,search_amount=50,train=False):
+        self.log = [] #Log of moves used in training
+        self.train = train #Control for if the agent is being trained
+        self.search_amount = search_amount #Amount of searches run when choosing move
+        self.MCTS = deepcopy(MCTS(max_depth=max_depth,train=train)) #MCTS instance for the agent
 
     """
     Input: game - object containing the game current state
@@ -28,15 +30,26 @@ class Agent:
     Output: tuple of strings representing the curent and next moves for the AI to make
     """
     def choose_action(self,game):
-        if self.MCTS.Player == None:
-            self.MCTS.Player = game.p_move
+        self.MCTS.Player = game.p_move
         for n in self.MCTS.tree:
             self.MCTS.tree[n].max_depth = False
         parent_hash = game.EPD_hash()
+        #Search game actions
         for x in range(self.search_amount):
-            #print(x)
             self.MCTS.depth = 0
             self.MCTS.search(game)
+            if self.train == True:
+                if sum(self.MCTS.state) > 0:
+                    game_train_data = pd.DataFrame(self.MCTS.log)
+                    for i,x in enumerate(self.MCTS.state):
+                        game_train_data[f'value{i}'] = [x]*len(self.MCTS.log)
+                        game_train_data[f'value{i}'] = game_train_data[f'value{i}'].astype(float)
+                    game_train_data = game_train_data.to_dict('records')
+                    if len(game_train_data) > 0:
+                        self.log += game_train_data
+                    self.MCTS.state = [0,0,0] #Reset search state
+                self.MCTS.log = [] #Reset search log
+        #Check actions for best move
         u_bank = {}
         for c,moves in game.possible_board_moves(capture=True).items():
             if len(moves) > 0 and ((c[0].isupper() and game.p_move == 1) or (c[0].islower() and game.p_move == -1)):
@@ -49,8 +62,8 @@ class Agent:
                             if self.MCTS.tree[hash].leaf == True and self.MCTS.tree[hash].Q == 6:
                                 return c,f'{game.x[n[0]]}{game.y[n[1]]}'
                             else:
-                                #print(f'{c}-{game.x[n[0]]}{game.y[n[1]]}',self.MCTS.tree[hash].Q,self.MCTS.tree[hash].P,math.sqrt(self.MCTS.tree[parent_hash].N),(1+self.MCTS.tree[hash].N),(math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)),self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N))))
-                                u_bank[f'{c}-{game.x[n[0]]}{game.y[n[1]]}'] = self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)))
+                                #print(f'{c}-{game.x[n[0]]}{game.y[n[1]]}',self.MCTS.tree[hash].Q,self.MCTS.tree[hash].P,math.log(self.MCTS.tree[parent_hash].N),1+self.MCTS.tree[hash].N,math.sqrt(math.log(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)),self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(math.log(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N)))))
+                                u_bank[f'{c}-{game.x[n[0]]}{game.y[n[1]]}'] = self.MCTS.tree[hash].Q + (self.MCTS.Cpuct * self.MCTS.tree[hash].P * (math.sqrt(math.log(self.MCTS.tree[parent_hash].N)/(1+self.MCTS.tree[hash].N))))
         m_bank = [k for k,v in u_bank.items() if v == max(u_bank.values())]
         if len(m_bank) > 0:
             cur,next = random.choice(m_bank).split('-')
@@ -69,15 +82,17 @@ class MCTS:
     Description: MCTS initail variables
     Output: None
     """
-    def __init__(self,max_depth=5,folder='ai_ben/data',filename = 'model.pth.tar'):
+    def __init__(self,max_depth=5,train=False,folder='ai_ben/data',filename = 'model.pth.tar'):
+        self.train = train #Control for if in training mode
         self.tree = {} #Game tree
-        self.Cpuct = 0.77 #Exploration hyper parameter
+        self.Cpuct = 0.77 #Exploration hyper parameter [0-1]
         self.Player = None #What player is searching
         self.depth = 0 #Curent node depth
         self.max_depth = max_depth #Max allowable depth
+        self.log = [] #Each search log
+        self.state = [0,0,0] #Used to know if leaf node was found and who won
         self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
-        self.token_bank = pd.read_csv('ai_ben/data/token_bank.csv') #All tokens
-
+        self.token_bank = pd.read_csv(f'{folder}/token_bank.csv') #All tokens
         #Model Parameters
         with open(os.path.join(folder,'model_param.json')) as f:
             m_param = json.load(f)
@@ -134,27 +149,23 @@ class MCTS:
             state = game.is_end()
         if sum(state) > 0:
             #End state found [leaf node]
-            #print('LEAF')
+            if self.train == True:
+                self.state = state
             self.tree[parent_hash].leaf = True
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                 self.tree[parent_hash].Q = 6 #Win
-                #print('FOUND WIN')
+                #print(f'FOUND WIN {self.Player}')
             elif state == [0,1,0]:
                 self.tree[parent_hash].Q = 1 #Tie
-                #print('FOUND TIE')
+                #print(f'FOUND TIE {self.Player}')
             else:
                 self.tree[parent_hash].Q = -6 #Loss
-                #print('FOUND LOSS')
+                #print(f'FOUND LOSS {self.Player}')
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
         if self.tree[parent_hash].Q == 0:
             #Use NN
-            #print('NN')
-            #print(game)
             enc_state = self.encode_state(game)
-            #print(enc_state)
-            #print(self)
             v,p = self.Model(enc_state)
-            #print(v,p)
             state[torch.argmax(v).item()] = 1
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                 self.tree[parent_hash].Q = 3 #Win
@@ -178,9 +189,11 @@ class MCTS:
         else:
             if self.depth == self.max_depth:
                 return self.tree[parent_hash].Q, self.tree[parent_hash].P
+            b_cur = None
+            b_next = None
             b_action = None
-            b_upper = float('-inf')
             w_check = False
+            b_upper = float('-inf')
             for cur,moves in game.possible_board_moves(capture=True).items():
                 if len(moves) > 0 and ((cur[0].isupper() and game.p_move == 1) or (cur[0].islower() and game.p_move == -1)):
                     for next in moves:
@@ -203,15 +216,20 @@ class MCTS:
                             imag_game.p_move = imag_game.p_move * (-1)
                             hash = imag_game.EPD_hash()
                             if hash in self.tree and self.tree[hash].max_depth == False:
-                                #print(self.tree[hash].Q, self.Cpuct, self.tree[hash].P, math.sqrt(self.tree[parent_hash].N), (1+self.tree[hash].N))
-                                u = self.tree[hash].Q + (self.Cpuct * self.tree[hash].P * (math.sqrt(self.tree[parent_hash].N)/(1+self.tree[hash].N)))
+                                #print(next,self.tree[hash].Q, self.Cpuct, self.tree[hash].P, math.sqrt(math.log(1+self.tree[parent_hash].N)/(self.tree[hash].N)))
+                                u = self.tree[hash].Q + (self.Cpuct * self.tree[hash].P * (math.sqrt(math.log(self.tree[parent_hash].N)/(1+self.tree[hash].N))))
                                 if u > b_upper:
                                     b_action = deepcopy(imag_game)
+                                    b_cur = deepcopy(game.board_2_array(cur))
+                                    b_next = deepcopy(next)
                                     b_upper = u
                     if w_check == True:
                         break
-            if b_action != None:
+            if b_action != None and b_cur != None and b_next != None:
                 #print('SEARCH')
+                if self.train == True:
+                    self.log.append({**{f'state{i}':float(s) for i,s in enumerate(self.encode_state(b_action)[0])},
+                                     **{f'action{x}':1 if x == ((b_cur[0]+(b_cur[1]*8))*64)+(b_next[0]+(b_next[1]*8)) else 0 for x in range(4096)}})
                 v,p = self.search(b_action)
                 hash = b_action.EPD_hash()
                 if hash in self.tree:
@@ -221,7 +239,6 @@ class MCTS:
                     self.tree[hash].P = p
                     return self.tree[hash].Q,self.tree[hash].P
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
-
 
     """
     Input: game - object containing the game current state
@@ -239,6 +256,7 @@ class MCTS:
         if len(temp_board) > 0:
             flat = [x for y in temp_board for x in y]
             result = [self.token_bank['token'].eq(t).idxmax() for t in flat]
+            result.insert(0,1) if game.p_move == 1 else result.insert(0,2)
         else:
             result = []
         return torch.tensor([result])
