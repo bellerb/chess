@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 """
 Game Engine for playing chess in the console
 """
@@ -302,6 +304,8 @@ class Chess:
                 for a in u_moves[m]:
                     if (a not in p_blocks) and a not in g_moves:
                         g_moves.append(a)
+                    elif a in p_blocks:
+                        break
         #Check if checkmate is in posible moves
         if len(k_pos) > 0 and k_pos[0] not in p_moves:
             return [0,0,0]

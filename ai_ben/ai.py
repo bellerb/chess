@@ -19,9 +19,7 @@ class Agent:
     Output: None
     """
     def __init__(self,max_depth=5,search_amount=50):
-        self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
-        self.token_bank = pd.read_csv('ai_ben/data/token_bank.csv') #All tokens
-        self.MCTS = MCTS(self,max_depth=max_depth)
+        self.MCTS = deepcopy(MCTS(max_depth=max_depth))
         self.search_amount = search_amount
 
     """
@@ -36,6 +34,7 @@ class Agent:
             self.MCTS.tree[n].max_depth = False
         parent_hash = game.EPD_hash()
         for x in range(self.search_amount):
+            #print(x)
             self.MCTS.depth = 0
             self.MCTS.search(game)
         u_bank = {}
@@ -55,27 +54,9 @@ class Agent:
         m_bank = [k for k,v in u_bank.items() if v == max(u_bank.values())]
         if len(m_bank) > 0:
             cur,next = random.choice(m_bank).split('-')
-        return cur,next
-
-    """
-    Input: game - object containing the game current state
-    Description: encode the game board as tokens for the NN
-    Output: list containing integers representing a tokenized game board
-    """
-    def encode_state(self,game):
-        temp_board = deepcopy(game.board)
-        for y,row in enumerate(temp_board):
-            for x,peice in enumerate(row):
-                if peice != 0:
-                    temp_board[y][x] = f'{self.notation[abs(peice)]}w' if peice > 0 else f'{self.notation[abs(peice)]}b'
-                else:
-                    temp_board[y][x] = 'PAD'
-        if len(temp_board) > 0:
-            flat = [x for y in temp_board for x in y]
-            result = [self.token_bank['token'].eq(t).idxmax() for t in flat]
         else:
-            result = []
-        return result
+            cur,next = ''
+        return cur,next
 
 """
 Monte Carlo Tree Search algorithm used to search game tree for the best move
@@ -94,6 +75,8 @@ class MCTS:
         self.Player = None #What player is searching
         self.depth = 0 #Curent node depth
         self.max_depth = max_depth #Max allowable depth
+        self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
+        self.token_bank = pd.read_csv('ai_ben/data/token_bank.csv') #All tokens
 
         #Model Parameters
         with open(os.path.join(folder,'model_param.json')) as f:
@@ -151,21 +134,27 @@ class MCTS:
             state = game.is_end()
         if sum(state) > 0:
             #End state found [leaf node]
+            #print('LEAF')
             self.tree[parent_hash].leaf = True
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                 self.tree[parent_hash].Q = 6 #Win
-                print('FOUND WIN')
+                #print('FOUND WIN')
             elif state == [0,1,0]:
                 self.tree[parent_hash].Q = 1 #Tie
-                print('FOUND TIE')
+                #print('FOUND TIE')
             else:
                 self.tree[parent_hash].Q = -6 #Loss
-                print('FOUND LOSS')
+                #print('FOUND LOSS')
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
         if self.tree[parent_hash].Q == 0:
             #Use NN
-            enc_state = Agent().encode_state(game)
-            v,p = self.Model(torch.tensor([enc_state]))
+            #print('NN')
+            #print(game)
+            enc_state = self.encode_state(game)
+            #print(enc_state)
+            #print(self)
+            v,p = self.Model(enc_state)
+            #print(v,p)
             state[torch.argmax(v).item()] = 1
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                 self.tree[parent_hash].Q = 3 #Win
@@ -222,6 +211,7 @@ class MCTS:
                     if w_check == True:
                         break
             if b_action != None:
+                #print('SEARCH')
                 v,p = self.search(b_action)
                 hash = b_action.EPD_hash()
                 if hash in self.tree:
@@ -231,3 +221,24 @@ class MCTS:
                     self.tree[hash].P = p
                     return self.tree[hash].Q,self.tree[hash].P
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
+
+
+    """
+    Input: game - object containing the game current state
+    Description: encode the game board as tokens for the NN
+    Output: list containing integers representing a tokenized game board
+    """
+    def encode_state(self,game):
+        temp_board = deepcopy(game.board)
+        for y,row in enumerate(temp_board):
+            for x,peice in enumerate(row):
+                if peice != 0:
+                    temp_board[y][x] = f'{self.notation[abs(peice)]}w' if peice > 0 else f'{self.notation[abs(peice)]}b'
+                else:
+                    temp_board[y][x] = 'PAD'
+        if len(temp_board) > 0:
+            flat = [x for y in temp_board for x in y]
+            result = [self.token_bank['token'].eq(t).idxmax() for t in flat]
+        else:
+            result = []
+        return torch.tensor([result])
