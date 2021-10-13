@@ -355,7 +355,7 @@ class Chess:
             if len(n_part) > 1:
                 n_part = getattr(Chess,str(n_part).capitalize())().notation
         part = self.notation[str(n_part).lower()]*self.p_move
-        pos = self.board_2_array(self.log[-1])
+        pos = self.board_2_array(self.log[-1].replace('+','').split('x')[-1])
         if pos != None:
             self.board[pos[1]][pos[0]] = part
             self.log[-1] += f'={str(n_part).upper()}'
