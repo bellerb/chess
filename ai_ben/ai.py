@@ -20,7 +20,7 @@ class Agent:
     Output: None
     """
     def __init__(self,max_depth=5,search_amount=50,train=False,model='model-active.pth.tar'):
-        print('LOAD')
+        #print('LOAD')
         self.log = [] #Log of moves used in training
         self.train = train #Control for if the agent is being trained
         self.search_amount = search_amount #Amount of searches run when choosing move
@@ -85,9 +85,9 @@ class MCTS:
     Output: None
     """
     def __init__(self,max_depth=5,train=False,folder='ai_ben/data',filename='model-active.pth.tar'):
-        print('---------')
-        print(locals())
-        print('SEARCH')
+        #print('---------')
+        #print(locals())
+        #print('SEARCH')
         self.train = train #Control for if in training mode
         self.tree = {} #Game tree
         self.Cpuct = 0.77 #Exploration hyper parameter [0-1]
@@ -100,10 +100,10 @@ class MCTS:
         #Model Parameters
         with open(os.path.join(folder,'model_param.json')) as f:
             m_param = json.load(f)
-        print('PARAM')
+        #print('PARAM')
         self.Device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #Set divice training will use
-        print('DEVICE')
-        print(locals())
+        #print('DEVICE')
+        #print(locals())
         self.Model = TransformerModel(
             m_param['input_size'], #Size of input layer 8x8 board
             m_param['ntokens'], #The size of vocabulary
@@ -113,13 +113,13 @@ class MCTS:
             m_param['nlayers'], #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
             m_param['dropout'] #The dropout value
         ).to(self.Device) #Initialize the transformer model
-        print('MODEL')
+        #print('MODEL')
         #Load Saved Model
         filepath = os.path.join(folder, filename)
         if os.path.exists(filepath):
             checkpoint = torch.load(filepath, map_location=self.Device)
             self.Model.load_state_dict(checkpoint['state_dict'])
-        print('PARAM')
+        #print('PARAM')
 
     """
     Node for each state in the game tree
@@ -209,10 +209,8 @@ class MCTS:
                     for next in moves:
                         imag_game = deepcopy(game)
                         if imag_game.move(cur,f'{game.x[next[0]]}{game.y[next[1]]}') == True:
-                            state = imag_game.check_state(parent_hash)
-                            if state == '50M':
-                                state = [0,1,0] #Auto tie
-                            elif state == '3F':
+                            state = imag_game.check_state(imag_game.EPD_hash())
+                            if state == '50M' or state == '3F':
                                 state = [0,1,0] #Auto tie
                             elif state == 'PP':
                                 imag_game.pawn_promotion(n_part='Q') #Auto queen
@@ -221,6 +219,8 @@ class MCTS:
                             if (state == [1,0,0] and imag_game.p_move == 1) or (state == [0,0,1] and imag_game.p_move == -1):
                                 imag_game.p_move = imag_game.p_move * (-1)
                                 b_action = deepcopy(imag_game)
+                                b_cur = deepcopy(game.board_2_array(cur))
+                                b_next = deepcopy(next)
                                 w_check = True
                                 break
                             imag_game.p_move = imag_game.p_move * (-1)
