@@ -7,6 +7,7 @@ import random
 import pandas as pd
 from copy import deepcopy
 from ai_ben.model import TransformerModel
+from concurrent.futures import ProcessPoolExecutor,as_completed
 
 """
 Class used to create game playing AI
@@ -18,11 +19,12 @@ class Agent:
     Description: AI initail variables
     Output: None
     """
-    def __init__(self,max_depth=5,search_amount=50,train=False):
+    def __init__(self,max_depth=5,search_amount=50,train=False,model='model-active.pth.tar'):
+        print('LOAD')
         self.log = [] #Log of moves used in training
         self.train = train #Control for if the agent is being trained
         self.search_amount = search_amount #Amount of searches run when choosing move
-        self.MCTS = deepcopy(MCTS(max_depth=max_depth,train=train)) #MCTS instance for the agent
+        self.MCTS = deepcopy(MCTS(max_depth=max_depth,train=train,filename=model)) #MCTS instance for the agent
 
     """
     Input: game - object containing the game current state
@@ -82,7 +84,10 @@ class MCTS:
     Description: MCTS initail variables
     Output: None
     """
-    def __init__(self,max_depth=5,train=False,folder='ai_ben/data',filename = 'model.pth.tar'):
+    def __init__(self,max_depth=5,train=False,folder='ai_ben/data',filename='model-active.pth.tar'):
+        print('---------')
+        print(locals())
+        print('SEARCH')
         self.train = train #Control for if in training mode
         self.tree = {} #Game tree
         self.Cpuct = 0.77 #Exploration hyper parameter [0-1]
@@ -91,25 +96,30 @@ class MCTS:
         self.max_depth = max_depth #Max allowable depth
         self.log = [] #Each search log
         self.state = [0,0,0] #Used to know if leaf node was found and who won
-        self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
-        self.token_bank = pd.read_csv(f'{folder}/token_bank.csv') #All tokens
+        self.plumbing = Plumbing() #Initalize plumbing
         #Model Parameters
         with open(os.path.join(folder,'model_param.json')) as f:
             m_param = json.load(f)
-        sinp = m_param['input_size'] #Size of input layer 8x8 board
-        ntokens = m_param['ntokens'] #The size of vocabulary
-        emsize = m_param['emsize'] #Embedding dimension
-        nhid = m_param['nhid'] #The dimension of the feedforward network model in nn.TransformerEncoder
-        nlayers = m_param['nlayers'] #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
-        nhead = m_param['nhead'] #The number of heads in the multiheadattention models
-        dropout = m_param['dropout'] #The dropout value
+        print('PARAM')
         self.Device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #Set divice training will use
-        self.Model = TransformerModel(sinp, ntokens, emsize, nhead, nhid, nlayers, dropout).to(self.Device) #Initialize the transformer model
+        print('DEVICE')
+        print(locals())
+        self.Model = TransformerModel(
+            m_param['input_size'], #Size of input layer 8x8 board
+            m_param['ntokens'], #The size of vocabulary
+            m_param['emsize'], #Embedding dimension
+            m_param['nhead'], #The number of heads in the multiheadattention models
+            m_param['nhid'], #The dimension of the feedforward network model in nn.TransformerEncoder
+            m_param['nlayers'], #The number of nn.TransformerEncoderLayer in nn.TransformerEncoder
+            m_param['dropout'] #The dropout value
+        ).to(self.Device) #Initialize the transformer model
+        print('MODEL')
         #Load Saved Model
         filepath = os.path.join(folder, filename)
         if os.path.exists(filepath):
             checkpoint = torch.load(filepath, map_location=self.Device)
             self.Model.load_state_dict(checkpoint['state_dict'])
+        print('PARAM')
 
     """
     Node for each state in the game tree
@@ -164,7 +174,7 @@ class MCTS:
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
         if self.tree[parent_hash].Q == 0:
             #Use NN
-            enc_state = self.encode_state(game)
+            enc_state = self.plumbing.encode_state(game)
             v,p = self.Model(enc_state)
             state[torch.argmax(v).item()] = 1
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
@@ -228,7 +238,7 @@ class MCTS:
             if b_action != None and b_cur != None and b_next != None:
                 #print('SEARCH')
                 if self.train == True:
-                    self.log.append({**{f'state{i}':float(s) for i,s in enumerate(self.encode_state(b_action)[0])},
+                    self.log.append({**{f'state{i}':float(s) for i,s in enumerate(self.plumbing.encode_state(b_action)[0])},
                                      **{f'action{x}':1 if x == ((b_cur[0]+(b_cur[1]*8))*64)+(b_next[0]+(b_next[1]*8)) else 0 for x in range(4096)}})
                 v,p = self.search(b_action)
                 hash = b_action.EPD_hash()
@@ -239,6 +249,19 @@ class MCTS:
                     self.tree[hash].P = p
                     return self.tree[hash].Q,self.tree[hash].P
             return self.tree[parent_hash].Q, self.tree[parent_hash].P
+
+"""
+Various processing needed for ai
+"""
+class Plumbing():
+    """
+    Input: None
+    Description: Plumbing initail variables
+    Output: None
+    """
+    def __init__(self,folder='ai_ben/data',filename='token_bank.csv'):
+        self.notation = {1:'p',2:'n',3:'b',4:'r',5:'q',6:'k'} #Map of notation to part number
+        self.token_bank = pd.read_csv(f'{folder}/{filename}') #All tokens
 
     """
     Input: game - object containing the game current state
@@ -260,3 +283,16 @@ class MCTS:
         else:
             result = []
         return torch.tensor([result])
+
+    """
+    Input: func - list of dicitonary's containing the functions you want to run in parallel
+    Description: run multiple funcitons in parallel
+    Output: dictionary containing the output from all the supplied functions
+    """
+    def multi_process(func,workers=None):
+        data = {}
+        with ProcessPoolExecutor(max_workers=workers) as ex:
+            future_func = {ex.submit(f['func'],*f['args']):f['name'] for f in func}
+            for future in as_completed(future_func):
+                data[future_func[future]] = future.result()
+            return data
