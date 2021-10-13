@@ -427,7 +427,7 @@ class Chess:
     """
     def five_fold_rule(self,hash):
         if hash in self.EPD_table:
-            if self.EPD_table[hash] == 5:
+            if self.EPD_table[hash] >= 5:
                 return True
         return False
 
@@ -500,6 +500,7 @@ class Chess:
             return [1,0,0]
         moves = self.possible_board_moves(capture=True)
         check_mate = self.is_checkmate(moves)
+        hash = self.EPD_hash()
         if sum(check_mate) > 0:
             return check_mate
         elif self.is_draw(moves,hash) == True:
