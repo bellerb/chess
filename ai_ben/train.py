@@ -148,7 +148,7 @@ class train:
         return train_data
 
 if __name__ == '__main__':
-    GAMES = 5 #Games to play on each board
+    GAMES = 100 #Games to play on each board
     BOARDS = 1 #Amount of boards to play on at a time
     BEST_OF = 5 #Amount of games played when evaluating the models
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
         torch.save({
             'state_dict': model.state_dict(),
         }, filepath)
-        print(f'{epoch} | {BOARDS} games | {time.time() - start_time} ms | {total_loss/(GAMES*BOARDS)} loss\n')
+        print(f'{epoch} | {BOARDS} games | {time.time() - start_time} ms | {train_data.size(0)} samples | {total_loss/(GAMES*BOARDS)} loss\n')
         #Garbage cleanup
         total_loss = 0
         train_data = pd.DataFrame()
