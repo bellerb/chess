@@ -31,7 +31,6 @@ class TransformerModel(nn.Module):
         self.padding_idx = padding_idx #Index of padding token
         self.ninp = ninp #Number of input items
         self.softmax = nn.Softmax(dim=1) #Softmax activation layer
-        self.sigmoid = nn.Sigmoid() #Sigmoid activation layer
         self.gelu = nn.GELU() #GELU activation layer
         self.flatten = nn.Flatten(start_dim=1) #Flatten layer
         self.decoder = nn.Linear(ninp,1) #Decode layer
@@ -65,7 +64,7 @@ class TransformerModel(nn.Module):
         v = self.v_output(output) #Value output
         v = self.softmax(v) #Get softmax probability
         p = self.p_output(output) #Policy output
-        p = self.sigmoid(p)
+        p = self.softmax(p) #Get softmax probability
         return v,p
 
     """

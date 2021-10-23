@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 """
 Game Engine for playing chess in the console
 """
@@ -189,6 +191,55 @@ class Chess:
         self.log.append(move)
 
     """
+    Input: cp - tuple containing the current position
+           np - tuple containing the next position
+    Description: updates the game variables
+    Output: boolean representing the state of the function
+    """
+    def update_state(cp,np):
+        part = self.board[cp[1]][cp[0]]
+        if np == self.en_passant and (part == 1 or part == -1):
+            self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
+        self.log_move(part,cur_pos,next_pos,cp,np)
+        if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
+            self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
+        elif part == 6*self.p_move and np[0]-cp[0] == 2:
+            self.board[np[1]][np[0]-1] = 4*self.p_move
+            self.board[np[1]][np[0]+1] = 0
+        elif part == 6*self.p_move and np[0]-cp[0] == -2:
+            self.board[np[1]][np[0]+1] = 4*self.p_move
+            self.board[np[1]][np[0]-2] = 0
+        else:
+            self.en_passant = None
+        if part == 6*self.p_move:
+            if self.p_move == 1:
+                self.castling[0] = 0
+                self.castling[1] = 0
+            else:
+                self.castling[2] = 0
+                self.castling[3] = 0
+        elif part == 4*self.p_move:
+            if self.p_move == 1:
+                if cp == (0,7):
+                    self.castling[1] = 0
+                else:
+                    self.castling[0] = 0
+            else:
+                if cp == (0,0):
+                    self.castling[3] = 0
+                else:
+                    self.castling[2] = 0
+        self.board[cp[1]][cp[0]] = 0
+        self.board[np[1]][np[0]] = part
+        hash = self.EPD_hash()
+        if hash in self.EPD_table:
+            self.EPD_table[hash] += 1
+        else:
+            self.EPD_table[hash] = 1
+        return True
+
+
+    """
     Input: cur_cord - string representing the current cordinate of the peice
            next_pos - string representing the next cordinate of the peice
     Description: move peice on game board
@@ -198,46 +249,7 @@ class Chess:
         cp = self.board_2_array(cur_pos)
         np = self.board_2_array(next_pos)
         if self.valid_move(cp,np) == True:
-            part = self.board[cp[1]][cp[0]]
-            if np == self.en_passant and (part == 1 or part == -1):
-                self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
-            self.log_move(part,cur_pos,next_pos,cp,np)
-            if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
-                self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
-            elif part == 6*self.p_move and np[0]-cp[0] == 2:
-                self.board[np[1]][np[0]-1] = 4*self.p_move
-                self.board[np[1]][np[0]+1] = 0
-            elif part == 6*self.p_move and np[0]-cp[0] == -2:
-                self.board[np[1]][np[0]+1] = 4*self.p_move
-                self.board[np[1]][np[0]-2] = 0
-            else:
-                self.en_passant = None
-            if part == 6*self.p_move:
-                if self.p_move == 1:
-                    self.castling[0] = 0
-                    self.castling[1] = 0
-                else:
-                    self.castling[2] = 0
-                    self.castling[3] = 0
-            elif part == 4*self.p_move:
-                if self.p_move == 1:
-                    if cp == (0,7):
-                        self.castling[1] = 0
-                    else:
-                        self.castling[0] = 0
-                else:
-                    if cp == (0,0):
-                        self.castling[3] = 0
-                    else:
-                        self.castling[2] = 0
-            self.board[cp[1]][cp[0]] = 0
-            self.board[np[1]][np[0]] = part
-            hash = self.EPD_hash()
-            if hash in self.EPD_table:
-                self.EPD_table[hash] += 1
-            else:
-                self.EPD_table[hash] = 1
-            #self.p_move = self.p_move * (-1)
+            update_state(cp,np) #Update game state
             return True
         return False
 
@@ -302,6 +314,8 @@ class Chess:
                 for a in u_moves[m]:
                     if (a not in p_blocks) and a not in g_moves:
                         g_moves.append(a)
+                    elif a in p_blocks:
+                        break
         #Check if checkmate is in posible moves
         if len(k_pos) > 0 and k_pos[0] not in p_moves:
             return [0,0,0]
@@ -311,14 +325,18 @@ class Chess:
                     k_pos = ((row.index(self.King().value*(self.p_move*(-1))),y),[])
                     break
         if len(k_pos) > 0 and k_pos[0] in p_moves:
+            if k_pos[0] not in g_moves:
+                if len(self.log) > 0 and self.log[-1][-1] is not '+':
+                    self.log[-1] += '+' #Check
+                return [0,0,0]
             for m in k_pos[1]:
                 if m not in g_moves:
                     i_game = deepcopy(self)
                     i_game.p_move = i_game.p_move * (-1)
-                    i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}',f'{self.x[m[0]]}{self.y[m[1]]}')
+                    i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}',f'{self.x[m[0]]}{self.y[m[1]]}') #Move king
                     i_game.p_move = i_game.p_move * (-1)
-                    i_moves = i_game.possible_board_moves(capture=True)
-                    if True not in [True for m in i_moves if k_pos[0] in i_moves[m]]:
+                    i_moves = i_game.possible_board_moves(capture=True) #Imaginary moves
+                    if True not in [True for k in i_moves if m in i_moves[k]]: #Check if moved king still in check
                         if len(self.log) > 0 and self.log[-1][-1] is not '+':
                             self.log[-1] += '+' #Check
                         return [0,0,0]
@@ -347,7 +365,7 @@ class Chess:
             if len(n_part) > 1:
                 n_part = getattr(Chess,str(n_part).capitalize())().notation
         part = self.notation[str(n_part).lower()]*self.p_move
-        pos = self.board_2_array(self.log[-1])
+        pos = self.board_2_array(self.log[-1].replace('+','').split('x')[-1])
         if pos != None:
             self.board[pos[1]][pos[0]] = part
             self.log[-1] += f'={str(n_part).upper()}'
@@ -419,7 +437,7 @@ class Chess:
     """
     def five_fold_rule(self,hash):
         if hash in self.EPD_table:
-            if self.EPD_table[hash] == 5:
+            if self.EPD_table[hash] >= 5:
                 return True
         return False
 
@@ -455,6 +473,12 @@ class Chess:
             return True
         return False
 
+    """
+    Input: moves - dictionary containing all possible moves for current game state
+           hash - string representing the current states EPD hash
+    Description: check to see if the current state is a draw
+    Output: boolean representing the state of the function
+    """
     def is_draw(self,moves,hash):
         if self.is_stalemate(moves) == True:
             return True
@@ -492,6 +516,7 @@ class Chess:
             return [1,0,0]
         moves = self.possible_board_moves(capture=True)
         check_mate = self.is_checkmate(moves)
+        hash = self.EPD_hash()
         if sum(check_mate) > 0:
             return check_mate
         elif self.is_draw(moves,hash) == True:
