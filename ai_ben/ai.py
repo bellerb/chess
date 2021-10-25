@@ -32,6 +32,7 @@ class Agent:
     Output: tuple of strings representing the curent and next moves for the AI to make
     """
     def choose_action(self,game):
+        self.log = []
         self.MCTS.Player = game.p_move
         for n in self.MCTS.tree:
             self.MCTS.tree[n].max_depth = False
@@ -70,7 +71,7 @@ class Agent:
         if len(m_bank) > 0:
             cur,next = random.choice(m_bank).split('-')
         else:
-            cur,next = ''
+            cur,next = '',''
         return cur,next
 
 """
