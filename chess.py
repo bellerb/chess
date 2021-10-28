@@ -205,7 +205,7 @@ class Chess:
             if np == self.en_passant and (part == 1 or part == -1):
                 self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
             self.log_move(part,cur_pos,next_pos,cp,np)
-            self.prev_move = deepcopy(self)
+            self.prev_move = self.board
             if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
                 self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
             elif part == 6*self.p_move and np[0]-cp[0] == 2:
