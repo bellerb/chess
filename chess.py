@@ -30,6 +30,7 @@ class Chess:
         self.p_move = 1 #Current players move white = 1 black = -1
         self.castling = [1,1,1,1] #Castling control
         self.en_passant = None #En passant control
+        self.prev_move = None #Previous move
         self.board = [[0,0,0,0,0,0,0,0],
                       [0,0,0,0,0,0,0,0],
                       [0,0,0,0,0,0,0,0],
@@ -204,6 +205,7 @@ class Chess:
             if np == self.en_passant and (part == 1 or part == -1):
                 self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
             self.log_move(part,cur_pos,next_pos,cp,np)
+            self.prev_move = deepcopy(self)
             if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
                 self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
             elif part == 6*self.p_move and np[0]-cp[0] == 2:
