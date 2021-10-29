@@ -27,7 +27,7 @@ white = 'human' #Values ['human','ai']
 black = 'ai' #Values ['human','ai']
 chess_game = Chess()
 
-p_type = [0,0]
+p_type = [0, 0]
 if white == 'ai':
     p_type[0] = 1
     w_bot = w_agent(max_depth=50) #Initailize ai_ben bot
@@ -53,29 +53,29 @@ while True:
         next = input('Where do you want to move the piece to?\n')
     else:
         if chess_game.p_move == 1:
-            cur,next = w_bot.choose_action(chess_game)
+            cur, next = w_bot.choose_action(chess_game)
         else:
-            cur,next = b_bot.choose_action(chess_game)
+            cur, next = b_bot.choose_action(chess_game)
         print('What piece do you want to move?\n')
         print(cur.lower())
         print('\nWhere do you want to move the piece to?\n')
         print(next.lower())
     valid = False
-    if chess_game.move(cur,next) == False:
+    if chess_game.move(cur, next) == False:
         print('Invalid move')
     else:
         valid = True
     if (p_type[0] == 1 and chess_game.p_move == 1) or (p_type[1] == 1 and chess_game.p_move == -1):
         state = chess_game.check_state(chess_game.EPD_hash())
         if state == '50M' or state == '3F':
-            state = [0,1,0] #Auto tie
+            state = [0, 1, 0] #Auto tie
         elif state == 'PP':
             chess_game.pawn_promotion(n_part='Q') #Auto queen
-        if state != [0,1,0]:
+        if state != [0, 1, 0]:
             state = chess_game.is_end()
     else:
         state = chess_game.is_end()
-        if state == [0,0,0]:
+        if state == [0, 0, 0]:
             if chess_game.check_state(chess_game.EPD_hash()) == 'PP':
                 print(chess_game.pawn_promotion())
     if sum(state) > 0:
@@ -85,9 +85,9 @@ while True:
         print(f'INITIAL POSITION = {chess_game.init_pos}')
         print(f'MOVES = {chess_game.log}')
         print('\nGame Result:\n------------\n')
-        if state == [0,0,1]:
+        if state == [0, 0, 1]:
             print('BLACK WINS')
-        elif state == [1,0,0]:
+        elif state == [1, 0, 0]:
             print('WHITE WINS')
         else:
             print('TIE GAME')

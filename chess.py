@@ -10,11 +10,11 @@ class Chess:
     Description: Chess initail variables
     Output: None
     """
-    def __init__(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
-        self.x = ['a','b','c','d','e','f','g','h'] #Board x representation
-        self.y = ['8','7','6','5','4','3','2','1'] #Board y representation
-        self.notation = {'p':1,'n':2,'b':3,'r':4,'q':5,'k':6} #Map of notation to part number
-        self.parts = {1:'Pawn',2:'Knight',3:'Bishop',4:'Rook',5:'Queen',6:'King'} #Map of number to part
+    def __init__(self, EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
+        self.x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] #Board x representation
+        self.y = ['8', '7', '6', '5', '4', '3', '2', '1'] #Board y representation
+        self.notation = {'p':1, 'n':2, 'b':3, 'r':4, 'q':5, 'k':6} #Map of notation to part number
+        self.parts = {1:'Pawn', 2:'Knight', 3:'Bishop', 4:'Rook', 5:'Queen', 6:'King'} #Map of number to part
         self.reset(EPD=EPD) #Reset game board and state
 
     """
@@ -23,22 +23,22 @@ class Chess:
     Description: reset game board to desired EPD hash
     Output: None
     """
-    def reset(self,EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
+    def reset(self, EPD='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'):
         self.log = [] #Game log
         self.init_pos = EPD #Inital position
         self.EPD_table = {} #EPD hashtable
         self.p_move = 1 #Current players move white = 1 black = -1
-        self.castling = [1,1,1,1] #Castling control
+        self.castling = [1, 1, 1, 1] #Castling control
         self.en_passant = None #En passant control
         self.prev_move = None #Previous move
-        self.board = [[0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0,0]] #Generate empty chess board
+        self.board = [[0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0]] #Generate empty chess board
         self.load_EPD(EPD) #Load in game starting position
 
     """
@@ -48,11 +48,11 @@ class Chess:
     """
     def display(self):
         result = '  a b c d e f g h  \n  ----------------\n'
-        for c,y in enumerate(self.board):
+        for c, y in enumerate(self.board):
             result += f'{8-c}|'
             for x in y:
                 if x != 0:
-                    n = getattr(Chess,self.parts[int(x) if x > 0 else int(x)*(-1)])().notation.lower() if x < 0 else getattr(Chess,self.parts[int(x) if x > 0 else int(x)*(-1)])().notation.upper()
+                    n = getattr(Chess, self.parts[int(x) if x > 0 else int(x)*(-1)])().notation.lower() if x < 0 else getattr(Chess, self.parts[int(x) if x > 0 else int(x)*(-1)])().notation.upper()
                     if n == '':
                         n = 'p' if x < 0 else 'P'
                     result += n
@@ -68,7 +68,7 @@ class Chess:
     Description: convert board string cordinate to a matrix index of the cordinate
     Output: tuple of x,y cordinates for game board matrix
     """
-    def board_2_array(self,cord):
+    def board_2_array(self, cord):
         cord = list(cord)
         if len(cord) == 2 and str(cord[0]).lower() in self.x and str(cord[1]) in self.y:
             return self.x.index(str(cord[0]).lower()), self.y.index(str(cord[1]))
@@ -82,7 +82,7 @@ class Chess:
     """
     def EPD_hash(self):
         result = ''
-        for i,rank in enumerate(self.board):
+        for i, rank in enumerate(self.board):
             e_count = 0
             for square in rank:
                 if square == 0:
@@ -92,7 +92,7 @@ class Chess:
                         result += str(e_count)
                     e_count = 0
                     p_name = self.parts[int(square) if square > 0 else int(square)*(-1)] #Get name of part
-                    p_notation = getattr(Chess,p_name)().notation
+                    p_notation = getattr(Chess, p_name)().notation
                     if p_notation == '':
                         p_notation = 'p'
                     if square < 0:
@@ -132,10 +132,10 @@ class Chess:
     Description: update game state to requirements in supplied EPD hash
     Output: boolean representing the outcome of the function
     """
-    def load_EPD(self,EPD):
+    def load_EPD(self, EPD):
         data = EPD.split(' ')
         if len(data) == 4:
-            for x,rank in enumerate(data[0].split('/')):
+            for x, rank in enumerate(data[0].split('/')):
                 y = 0
                 for p in rank:
                     if p.isdigit():
@@ -175,7 +175,7 @@ class Chess:
     Description: log player move using chess notation (English)
     Output: None
     """
-    def log_move(self,part,cur_cord,next_cord,cur_pos,next_pos,n_part=None):
+    def log_move(self, part, cur_cord, next_cord, cur_pos, next_pos, n_part=None):
         #to remove ambiguity where multiple pieces could make the move add starting identifier after piece notation ex Rab8
         if part == 6*self.p_move and next_pos[0]-cur_pos[0] == 2:
             move = '0-0'
@@ -185,7 +185,7 @@ class Chess:
             move = f'{str(next_cord).lower()}={str(n_part).upper()}'
         else:
             p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
-            move = str(getattr(Chess,p_name)().notation).upper() #Get part notation
+            move = str(getattr(Chess, p_name)().notation).upper() #Get part notation
             if self.board[next_pos[1]][next_pos[0]] != 0 or (next_pos == self.en_passant and (part == 1 or part == -1)): #Check if there is a capture
                 move += 'x' if move != '' else str(cur_cord)[0] + 'x'
             move += str(next_cord).lower()
@@ -197,17 +197,17 @@ class Chess:
     Description: move peice on game board
     Output: boolean representing the state of the function
     """
-    def move(self,cur_pos,next_pos):
+    def move(self, cur_pos, next_pos):
         cp = self.board_2_array(cur_pos)
         np = self.board_2_array(next_pos)
-        if self.valid_move(cp,np) == True:
+        if self.valid_move(cp, np) == True:
             part = self.board[cp[1]][cp[0]]
             if np == self.en_passant and (part == 1 or part == -1):
                 self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
-            self.log_move(part,cur_pos,next_pos,cp,np)
+            self.log_move(part, cur_pos, next_pos, cp, np)
             self.prev_move = self.board
             if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
-                self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
+                self.en_passant = (np[0], np[1]+1) if part == 1 else (np[0], np[1]-1)
             elif part == 6*self.p_move and np[0]-cp[0] == 2:
                 self.board[np[1]][np[0]-1] = 4*self.p_move
                 self.board[np[1]][np[0]+1] = 0
@@ -225,12 +225,12 @@ class Chess:
                     self.castling[3] = 0
             elif part == 4*self.p_move:
                 if self.p_move == 1:
-                    if cp == (0,7):
+                    if cp == (0, 7):
                         self.castling[1] = 0
                     else:
                         self.castling[0] = 0
                 else:
-                    if cp == (0,0):
+                    if cp == (0, 0):
                         self.castling[3] = 0
                     else:
                         self.castling[2] = 0
@@ -251,12 +251,12 @@ class Chess:
     Description: determine if player move is valid game move
     Output: boolean representing the state of the player move
     """
-    def valid_move(self,cur_pos,next_pos):
+    def valid_move(self, cur_pos, next_pos):
         if cur_pos != None and next_pos != None:
             part = self.board[cur_pos[1]][cur_pos[0]]
             if part * self.p_move > 0 and part != 0:
                 p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
-                if next_pos in getattr(Chess,p_name).movement(self,self.p_move,cur_pos,capture=True):
+                if next_pos in getattr(Chess, p_name).movement(self, self.p_move, cur_pos, capture=True):
                     return True
         return False
 
@@ -265,14 +265,14 @@ class Chess:
     Description: determine all possible board moves for current game state
     Output: dictionary containing all possible moves by peice on the board
     """
-    def possible_board_moves(self,capture=True):
+    def possible_board_moves(self, capture=True):
         moves = {}
-        for y,row in enumerate(self.board):
-            for x,part in enumerate(row):
+        for y, row in enumerate(self.board):
+            for x, part in enumerate(row):
                 if part != 0:
                     p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
                     p_colour = 1 if part > 0 else -1
-                    moves[f'{str(self.x[x]).upper() if p_colour > 0 else str(self.x[x]).lower()}{self.y[y]}'] = getattr(Chess,p_name).movement(self,p_colour,[x,y],capture=capture)
+                    moves[f'{str(self.x[x]).upper() if p_colour > 0 else str(self.x[x]).lower()}{self.y[y]}'] = getattr(Chess, p_name).movement(self, p_colour, [x, y], capture=capture)
         return moves
 
     """
@@ -281,16 +281,16 @@ class Chess:
     Description: determine if the current game state results in a check mate or not
     Output: list representing current state of the game
     """
-    def is_checkmate(self,moves):
+    def is_checkmate(self, moves):
         k_pos = () #King position
         p_blocks = [] #Possible blocks
         u_moves = {} #User potential moves
         #Sort all possible moves
-        for p,a in moves.items():
+        for p, a in moves.items():
             pos = self.board_2_array(p)
             if (str(p[0]).isupper() and self.p_move == -1) or (str(p[0]).islower() and self.p_move == 1):
                 if self.board[pos[1]][pos[0]] == self.King().value * (self.p_move*(-1)):
-                    k_pos = (pos,a)
+                    k_pos = (pos, a)
                 else:
                     for m in a:
                         if m not in p_blocks:
@@ -310,54 +310,54 @@ class Chess:
                         break
         #Check if checkmate is in posible moves
         if len(k_pos) > 0 and k_pos[0] not in p_moves:
-            return [0,0,0]
+            return [0, 0, 0]
         elif len(k_pos) == 0:
-            for y,row in enumerate(self.board):
+            for y, row in enumerate(self.board):
                 if self.King().value * (self.p_move*(-1)) in row:
-                    k_pos = ((row.index(self.King().value*(self.p_move*(-1))),y),[])
+                    k_pos = ((row.index(self.King().value*(self.p_move*(-1))), y), [])
                     break
         if len(k_pos) > 0 and k_pos[0] in p_moves:
             if k_pos[0] not in g_moves:
                 if len(self.log) > 0 and self.log[-1][-1] is not '+':
                     self.log[-1] += '+' #Check
-                return [0,0,0]
+                return [0, 0, 0]
             for m in k_pos[1]:
                 if m not in g_moves:
                     i_game = deepcopy(self)
                     i_game.p_move = i_game.p_move * (-1)
-                    i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}',f'{self.x[m[0]]}{self.y[m[1]]}') #Move king
+                    i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}', f'{self.x[m[0]]}{self.y[m[1]]}') #Move king
                     i_game.p_move = i_game.p_move * (-1)
                     i_moves = i_game.possible_board_moves(capture=True) #Imaginary moves
                     if True not in [True for k in i_moves if m in i_moves[k]]: #Check if moved king still in check
                         if len(self.log) > 0 and self.log[-1][-1] is not '+':
                             self.log[-1] += '+' #Check
-                        return [0,0,0]
+                        return [0, 0, 0]
             if self.p_move == -1:
                 self.log[-1] += '#'
-                return [0,0,1] #Black wins
+                return [0, 0, 1] #Black wins
             else:
                 self.log[-1] += '#'
-                return [1,0,0] #White wins
+                return [1, 0, 0] #White wins
         else:
-            return [1,0,0] if self.p_move == 1 else [0,0,1]
+            return [1, 0, 0] if self.p_move == 1 else [0, 0, 1]
 
     """
     Input: n_part - string representing the new part you want to promote your pawn to (Default=None) [OPTIONAL]
     Description: update game board with new part for pawn promotion
     Output: boolean representing the state of the function
     """
-    def pawn_promotion(self,n_part=None):
+    def pawn_promotion(self, n_part=None):
         if n_part == None:
             while True:
                 n_part = input('\nPawn Promotion - What peice would you like to switch too:\n\n*Queen[q]\n*Bishop[b]\n*Knight[n]\n*Rook[r]\n')
-                if str(n_part).lower() not in ['q','b','n','r','queen','bishop','knight','rook']:
+                if str(n_part).lower() not in ['q', 'b', 'n', 'r', 'queen', 'bishop', 'knight', 'rook']:
                     print('\nInvalid Option')
                 else:
                     break
             if len(n_part) > 1:
-                n_part = getattr(Chess,str(n_part).capitalize())().notation
+                n_part = getattr(Chess, str(n_part).capitalize())().notation
         part = self.notation[str(n_part).lower()]*self.p_move
-        pos = self.board_2_array(self.log[-1].replace('+','').split('x')[-1])
+        pos = self.board_2_array(self.log[-1].replace('+', '').split('x')[-1])
         if pos != None:
             self.board[pos[1]][pos[0]] = part
             self.log[-1] += f'={str(n_part).upper()}'
@@ -371,7 +371,7 @@ class Chess:
     Description: check current state of the game for the fifty move rule
     Output: boolean representing the state of the function
     """
-    def fifty_move_rule(self,moves,choice=None):
+    def fifty_move_rule(self, moves, choice=None):
         if len(self.log) > 100:
             for m in self.log[-100:]:
                 if 'x' in m or m[0].islower():
@@ -396,7 +396,7 @@ class Chess:
     Description: check current state of the game for the seventy five move rule
     Output: boolean representing the state of the function
     """
-    def seventy_five_move_rule(self,moves):
+    def seventy_five_move_rule(self, moves):
         if len(self.log) > 150:
             for m in self.log[-150:]:
                 if 'x' in m or m[0].islower():
@@ -410,7 +410,7 @@ class Chess:
     Description: check current state of the game for the three fold rule
     Output: boolean representing the state of the function
     """
-    def three_fold_rule(self,hash):
+    def three_fold_rule(self, hash):
         if hash in self.EPD_table:
             if self.EPD_table[hash] == 3:
                 while True:
@@ -427,7 +427,7 @@ class Chess:
     Description: check current state of the game for the five fold rule
     Output: boolean representing the state of the function
     """
-    def five_fold_rule(self,hash):
+    def five_fold_rule(self, hash):
         if hash in self.EPD_table:
             if self.EPD_table[hash] >= 5:
                 return True
@@ -438,7 +438,7 @@ class Chess:
     Description: check to see if the current state is a dead position
     Output: boolean representing the state of the function
     """
-    def is_dead_position(self,moves):
+    def is_dead_position(self, moves):
         #King and bishop against king and bishop with both bishops on squares of the same colour
         a_pieces = []
         for y in self.board:
@@ -460,12 +460,12 @@ class Chess:
     Description: check to see if the current state is a stalemate
     Output: boolean representing the state of the function
     """
-    def is_stalemate(self,moves):
-        if False not in [False for p,a in moves.items() if len(a) > 0 and ((self.p_move == 1 and str(p[0]).isupper()) or (self.p_move == -1 and str(p[0]).islower()))]:
+    def is_stalemate(self, moves):
+        if False not in [False for p, a in moves.items() if len(a) > 0 and ((self.p_move == 1 and str(p[0]).isupper()) or (self.p_move == -1 and str(p[0]).islower()))]:
             return True
         return False
 
-    def is_draw(self,moves,hash):
+    def is_draw(self, moves, hash):
         if self.is_stalemate(moves) == True:
             return True
         elif self.is_dead_position(moves) == True:
@@ -488,33 +488,33 @@ class Chess:
     def is_end(self):
         w_king = False
         b_king = False
-        for y,row in enumerate(self.board):
-            for x,peice in enumerate(row):
+        for y, row in enumerate(self.board):
+            for x, peice in enumerate(row):
                 if self.board[y][x] == self.King().value * (-1):
                     b_king = True
                 elif self.board[y][x] == self.King().value:
                     w_king = True
         if w_king == False and b_king == False:
-            return [0,1,0]
+            return [0, 1, 0]
         elif w_king == False:
-            return [0,0,1]
+            return [0, 0, 1]
         elif b_king == False:
-            return [1,0,0]
+            return [1, 0, 0]
         moves = self.possible_board_moves(capture=True)
         check_mate = self.is_checkmate(moves)
         hash = self.EPD_hash()
         if sum(check_mate) > 0:
             return check_mate
-        elif self.is_draw(moves,hash) == True:
-            return [0,1,0]
-        return [0,0,0]
+        elif self.is_draw(moves, hash) == True:
+            return [0, 1, 0]
+        return [0, 0, 0]
 
     """
     Input: hash - string representing the game state you want to check for in game EPD hash table
     Description: check current state of the game
     Output: boolean representing the state of the game or string representing additional action needed
     """
-    def check_state(self,hash):
+    def check_state(self, hash):
         if len(self.log) > 0 and self.p_move == 1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '8']:
             return 'PP' #Pawn promotion
         elif len(self.log) > 0 and self.p_move == -1 and (self.log[-1][0].isupper() == False or self.log[-1][0] == 'P') and True in [True for l in self.log[-1] if l == '1']:
@@ -549,28 +549,28 @@ class Chess:
         Description: show possible moves for peice
         Output: list of possible moves for the peice
         """
-        def movement(game,player,pos,capture=True):
+        def movement(game, player, pos, capture=True):
             result = []
             if pos[1]+1 >= 0 and pos[1]+1 <= 7 and pos[0] >= 0 and pos[0] <= 7 and (game.board[pos[1]+1][pos[0]]*player < 0 or game.board[pos[1]+1][pos[0]] == 0):
-                result.append((pos[0],pos[1]+1))
+                result.append((pos[0], pos[1]+1))
             if pos[1]-1 >= 0 and pos[1]-1 <= 7 and pos[0] >= 0 and pos[0] <= 7 and (game.board[pos[1]-1][pos[0]]*player < 0 or game.board[pos[1]-1][pos[0]] == 0):
-                result.append((pos[0],pos[1]-1))
+                result.append((pos[0], pos[1]-1))
             if pos[1] >= 0 and pos[1] <= 7 and pos[0]+1 >= 0 and pos[0]+1 <= 7 and (game.board[pos[1]][pos[0]+1]*player < 0 or game.board[pos[1]][pos[0]+1] == 0):
-                result.append((pos[0]+1,pos[1]))
+                result.append((pos[0]+1, pos[1]))
             if pos[1] >= 0 and pos[1] <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and (game.board[pos[1]][pos[0]-1]*player < 0 or game.board[pos[1]][pos[0]-1] == 0):
-                result.append((pos[0]-1,pos[1]))
+                result.append((pos[0]-1, pos[1]))
             if pos[1]+1 >= 0 and pos[1]+1 <= 7 and pos[0]+1 >= 0 and pos[0]+1 <= 7 and (game.board[pos[1]+1][pos[0]+1]*player < 0 or game.board[pos[1]+1][pos[0]+1] == 0):
-                result.append((pos[0]+1,pos[1]+1))
+                result.append((pos[0]+1, pos[1]+1))
             if pos[1]+1 >= 0 and pos[1]+1 <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and (game.board[pos[1]+1][pos[0]-1]*player < 0 or game.board[pos[1]+1][pos[0]-1] == 0):
-                result.append((pos[0]-1,pos[1]+1))
+                result.append((pos[0]-1, pos[1]+1))
             if pos[1]-1 >= 0 and pos[1]-1 <= 7 and pos[0]+1 >= 0 and pos[0]+1 <= 7 and (game.board[pos[1]-1][pos[0]+1]*player < 0 or game.board[pos[1]-1][pos[0]+1] == 0):
-                result.append((pos[0]+1,pos[1]-1))
+                result.append((pos[0]+1, pos[1]-1))
             if pos[1]-1 >= 0 and pos[1]-1 <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and (game.board[pos[1]-1][pos[0]-1]*player < 0 or game.board[pos[1]-1][pos[0]-1] == 0):
-                result.append((pos[0]-1,pos[1]-1))
-            if (pos == (4,7) or pos == (4,0)) and game.board[pos[1]][pos[0]+1] == 0 and game.board[pos[1]][pos[0]+2] == 0 and ((game.castling[0] == 1 and game.p_move == 1) or (game.castling[2] == 1 and game.p_move == -1)):
-                result.append((pos[0]+2,pos[1]))
-            if (pos == (4,7) or pos == (4,0)) and game.board[pos[1]][pos[0]-1] == 0 and game.board[pos[1]][pos[0]-2] == 0 and ((game.castling[1] == 1 and game.p_move == 1) or (game.castling[3] == 1 and game.p_move == -1)):
-                result.append((pos[0]-2,pos[1]))
+                result.append((pos[0]-1, pos[1]-1))
+            if (pos == (4, 7) or pos == (4, 0)) and game.board[pos[1]][pos[0]+1] == 0 and game.board[pos[1]][pos[0]+2] == 0 and ((game.castling[0] == 1 and game.p_move == 1) or (game.castling[2] == 1 and game.p_move == -1)):
+                result.append((pos[0]+2, pos[1]))
+            if (pos == (4, 7) or pos == (4, 0)) and game.board[pos[1]][pos[0]-1] == 0 and game.board[pos[1]][pos[0]-2] == 0 and ((game.castling[1] == 1 and game.p_move == 1) or (game.castling[3] == 1 and game.p_move == -1)):
+                result.append((pos[0]-2, pos[1]))
             return result
 
     """
@@ -593,54 +593,54 @@ class Chess:
         Description: show possible moves for peice
         Output: list of possible moves for the peice
         """
-        def movement(game,player,pos,capture=True):
+        def movement(game, player, pos, capture=True):
             result = []
-            check = [True,True,True,True,True,True,True,True]
-            for c in range(1,8,1):
+            check = [True, True, True, True, True, True, True, True]
+            for c in range(1, 8, 1):
                 if pos[1]+c >= 0 and pos[1]+c <= 7 and pos[0] >= 0 and pos[0] <= 7 and (game.board[pos[1]+c][pos[0]]*player < 0 or game.board[pos[1]+c][pos[0]] == 0) and check[0] == True:
-                    result.append((pos[0],pos[1]+c))
+                    result.append((pos[0], pos[1]+c))
                     if game.board[pos[1]+c][pos[0]]*player < 0 and capture == True:
                         check[0] = False
                 else:
                     check[0] = False
                 if pos[1]-c >= 0 and pos[1]-c <= 7 and pos[0] >= 0 and pos[0] <= 7 and (game.board[pos[1]-c][pos[0]]*player < 0 or game.board[pos[1]-c][pos[0]] == 0) and check[1] == True:
-                    result.append((pos[0],pos[1]-c))
+                    result.append((pos[0], pos[1]-c))
                     if game.board[pos[1]-c][pos[0]]*player < 0 and capture == True:
                         check[1] = False
                 else:
                     check[1] = False
                 if pos[1] >= 0 and pos[1] <= 7 and pos[0]+c >= 0 and pos[0]+c <= 7 and (game.board[pos[1]][pos[0]+c]*player < 0 or game.board[pos[1]][pos[0]+c] == 0) and check[2] == True:
-                    result.append((pos[0]+c,pos[1]))
+                    result.append((pos[0]+c, pos[1]))
                     if game.board[pos[1]][pos[0]+c]*player < 0 and capture == True:
                         check[2] = False
                 else:
                     check[2] = False
                 if pos[1] >= 0 and pos[1] <= 7 and pos[0]-c >= 0 and pos[0]-c <= 7 and (game.board[pos[1]][pos[0]-c]*player < 0 or game.board[pos[1]][pos[0]-c] == 0) and check[3] == True:
-                    result.append((pos[0]-c,pos[1]))
+                    result.append((pos[0]-c, pos[1]))
                     if game.board[pos[1]][pos[0]-c]*player < 0 and capture == True:
                         check[3] = False
                 else:
                     check[3] = False
                 if pos[1]+c >= 0 and pos[1]+c <= 7 and pos[0]+c >= 0 and pos[0]+c <= 7 and (game.board[pos[1]+c][pos[0]+c]*player < 0 or game.board[pos[1]+c][pos[0]+c] == 0) and check[4] == True:
-                    result.append((pos[0]+c,pos[1]+c))
+                    result.append((pos[0]+c, pos[1]+c))
                     if game.board[pos[1]+c][pos[0]+c]*player < 0 and capture == True:
                         check[4] = False
                 else:
                     check[4] = False
                 if pos[1]+c >= 0 and pos[1]+c <= 7 and pos[0]-c >= 0 and pos[0]-c <= 7 and (game.board[pos[1]+c][pos[0]-c]*player < 0 or game.board[pos[1]+c][pos[0]-c] == 0) and check[5] == True:
-                    result.append((pos[0]-c,pos[1]+c))
+                    result.append((pos[0]-c, pos[1]+c))
                     if game.board[pos[1]+c][pos[0]-c]*player < 0 and capture == True:
                         check[5] = False
                 else:
                     check[5] = False
                 if pos[1]-c >= 0 and pos[1]-c <= 7 and pos[0]+c >= 0 and pos[0]+c <= 7 and (game.board[pos[1]-c][pos[0]+c]*player < 0 or game.board[pos[1]-c][pos[0]+c] == 0) and check[6] == True:
-                    result.append((pos[0]+c,pos[1]-c))
+                    result.append((pos[0]+c, pos[1]-c))
                     if game.board[pos[1]-c][pos[0]+c]*player < 0 and capture == True:
                         check[6] = False
                 else:
                     check[6] = False
                 if pos[1]-c >= 0 and pos[1]-c <= 7 and pos[0]-c >= 0 and pos[0]-c <= 7 and (game.board[pos[1]-c][pos[0]-c]*player < 0 or game.board[pos[1]-c][pos[0]-c] == 0) and check[7] == True:
-                    result.append((pos[0]-c,pos[1]-c))
+                    result.append((pos[0]-c, pos[1]-c))
                     if game.board[pos[1]-c][pos[0]-c]*player < 0 and capture == True:
                         check[7] = False
                 else:
@@ -669,30 +669,30 @@ class Chess:
         Description: show possible moves for peice
         Output: list of possible moves for the peice
         """
-        def movement(game,player,pos,capture=True):
+        def movement(game, player, pos, capture=True):
             result = []
-            check = [True,True,True,True]
-            for c in range(1,8,1):
+            check = [True, True, True, True]
+            for c in range(1, 8, 1):
                 if pos[1]+c >= 0 and pos[1]+c <= 7 and pos[0] >= 0 and pos[0] <= 7 and (game.board[pos[1]+c][pos[0]]*player < 0 or game.board[pos[1]+c][pos[0]] == 0) and check[0] == True:
-                    result.append((pos[0],pos[1]+c))
+                    result.append((pos[0], pos[1]+c))
                     if game.board[pos[1]+c][pos[0]]*player < 0 and capture == True:
                         check[0] = False
                 else:
                     check[0] = False
                 if pos[1]-c >= 0 and pos[1]-c <= 7 and pos[0] >= 0 and pos[0] <= 7 and (game.board[pos[1]-c][pos[0]]*player < 0 or game.board[pos[1]-c][pos[0]] == 0) and check[1] == True:
-                    result.append((pos[0],pos[1]-c))
+                    result.append((pos[0], pos[1]-c))
                     if game.board[pos[1]-c][pos[0]]*player < 0 and capture == True:
                         check[1] = False
                 else:
                     check[1] = False
                 if pos[1] >= 0 and pos[1] <= 7 and pos[0]+c >= 0 and pos[0]+c <= 7 and (game.board[pos[1]][pos[0]+c]*player < 0 or game.board[pos[1]][pos[0]+c] == 0) and check[2] == True:
-                    result.append((pos[0]+c,pos[1]))
+                    result.append((pos[0]+c, pos[1]))
                     if game.board[pos[1]][pos[0]+c]*player < 0 and capture == True:
                         check[2] = False
                 else:
                     check[2] = False
                 if pos[1] >= 0 and pos[1] <= 7 and pos[0]-c >= 0 and pos[0]-c <= 7 and (game.board[pos[1]][pos[0]-c]*player < 0 or game.board[pos[1]][pos[0]-c] == 0) and check[3] == True:
-                    result.append((pos[0]-c,pos[1]))
+                    result.append((pos[0]-c, pos[1]))
                     if game.board[pos[1]][pos[0]-c]*player < 0 and capture == True:
                         check[3] = False
                 else:
@@ -721,30 +721,30 @@ class Chess:
         Description: show possible moves for peice
         Output: list of possible moves for the peice
         """
-        def movement(game,player,pos,capture=True):
+        def movement(game, player, pos, capture=True):
             result = []
-            check = [True,True,True,True]
-            for c in range(1,8,1):
+            check = [True, True, True, True]
+            for c in range(1, 8, 1):
                 if pos[1]+c >= 0 and pos[1]+c <= 7 and pos[0]+c >= 0 and pos[0]+c <= 7 and (game.board[pos[1]+c][pos[0]+c]*player < 0 or game.board[pos[1]+c][pos[0]+c] == 0) and check[0] == True:
-                    result.append((pos[0]+c,pos[1]+c))
+                    result.append((pos[0]+c, pos[1]+c))
                     if game.board[pos[1]+c][pos[0]+c]*player < 0 and capture == True:
                         check[0] = False
                 else:
                     check[0] = False
                 if pos[1]+c >= 0 and pos[1]+c <= 7 and pos[0]-c >= 0 and pos[0]-c <= 7 and (game.board[pos[1]+c][pos[0]-c]*player < 0 or game.board[pos[1]+c][pos[0]-c] == 0) and check[1] == True:
-                    result.append((pos[0]-c,pos[1]+c))
+                    result.append((pos[0]-c, pos[1]+c))
                     if game.board[pos[1]+c][pos[0]-c]*player < 0 and capture == True:
                         check[1] = False
                 else:
                     check[1] = False
                 if pos[1]-c >= 0 and pos[1]-c <= 7 and pos[0]+c >= 0 and pos[0]+c <= 7 and (game.board[pos[1]-c][pos[0]+c]*player < 0 or game.board[pos[1]-c][pos[0]+c] == 0) and check[2] == True:
-                    result.append((pos[0]+c,pos[1]-c))
+                    result.append((pos[0]+c, pos[1]-c))
                     if game.board[pos[1]-c][pos[0]+c]*player < 0 and capture == True:
                         check[2] = False
                 else:
                     check[2] = False
                 if pos[1]-c >= 0 and pos[1]-c <= 7 and pos[0]-c >= 0 and pos[0]-c <= 7 and (game.board[pos[1]-c][pos[0]-c]*player < 0 or game.board[pos[1]-c][pos[0]-c] == 0) and check[3] == True:
-                    result.append((pos[0]-c,pos[1]-c))
+                    result.append((pos[0]-c, pos[1]-c))
                     if game.board[pos[1]-c][pos[0]-c]*player < 0 and capture == True:
                         check[3] = False
                 else:
@@ -773,17 +773,17 @@ class Chess:
         Description: show possible moves for peice
         Output: list of possible moves for the peice
         """
-        def movement(game,player,pos,capture=True):
+        def movement(game, player, pos, capture=True):
             result = []
-            for i in [-1,1]:
+            for i in [-1, 1]:
                 if pos[0]-i >= 0 and pos[0]-i <= 7 and pos[1]-(2*i) >= 0 and pos[1]-(2*i) <= 7 and (game.board[pos[1]-(2*i)][pos[0]-i]*player < 0 or game.board[pos[1]-(2*i)][pos[0]-i] == 0):
-                    result.append((pos[0]-i,pos[1]-(2*i)))
+                    result.append((pos[0]-i, pos[1]-(2*i)))
                 if pos[0]+i >= 0 and pos[0]+i <= 7 and pos[1]-(2*i) >= 0 and pos[1]-(2*i) <= 7 and (game.board[pos[1]-(2*i)][pos[0]+i]*player < 0 or game.board[pos[1]-(2*i)][pos[0]+i] == 0):
-                    result.append((pos[0]+i,pos[1]-(2*i)))
+                    result.append((pos[0]+i, pos[1]-(2*i)))
                 if pos[0]-(2*i) >= 0 and pos[0]-(2*i) <= 7 and pos[1]-i >= 0 and pos[1]-i <= 7 and (game.board[pos[1]-i][pos[0]-(2*i)]*player < 0 or game.board[pos[1]-i][pos[0]-(2*i)] == 0):
-                    result.append((pos[0]-(2*i),pos[1]-i))
+                    result.append((pos[0]-(2*i), pos[1]-i))
                 if pos[0]-(2*i) >= 0 and pos[0]-(2*i) <= 7 and pos[1]+i >= 0 and pos[1]+i <= 7 and (game.board[pos[1]+i][pos[0]-(2*i)]*player < 0 or game.board[pos[1]+i][pos[0]-(2*i)] == 0):
-                    result.append((pos[0]-(2*i),pos[1]+i))
+                    result.append((pos[0]-(2*i), pos[1]+i))
             return result
 
     """
@@ -806,23 +806,23 @@ class Chess:
         Description: show possible moves for peice
         Output: list of possible moves for the peice
         """
-        def movement(game,player,pos,capture=True):
+        def movement(game, player, pos, capture=True):
             result = []
             init = 1 if player < 0 else 6
             amt = 1 if pos[1] != init else 2
             for i in range(amt):
                 if pos[1]-((i+1)*player) >= 0 and pos[1]-((i+1)*player) <= 7 and game.board[pos[1]-((i+1)*player)][pos[0]] == 0:
-                    result.append((pos[0],pos[1]-((i+1)*player)))
+                    result.append((pos[0], pos[1]-((i+1)*player)))
                 else:
                     break
             if pos[1]-player <= 7 and pos[1]-player >= 0 and pos[0]+1 <= 7 and pos[0]+1 >= 0 and game.board[pos[1]-player][pos[0]+1]*player < 0:
-                result.append((pos[0]+1,pos[1]-player))
+                result.append((pos[0]+1, pos[1]-player))
             if pos[1]-player >= 0 and pos[1]-player <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and game.board[pos[1]-player][pos[0]-1]*player < 0:
-                result.append((pos[0]-1,pos[1]-player))
-            if pos[1]-player <= 7 and pos[1]-player >= 0 and pos[0]+1 <= 7 and pos[0]+1 >= 0 and (pos[0]+1,pos[1]-player) == game.en_passant:
-                result.append((pos[0]+1,pos[1]-player))
-            if pos[1]-player >= 0 and pos[1]-player <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and (pos[0]-1,pos[1]-player) == game.en_passant:
-                result.append((pos[0]-1,pos[1]-player))
+                result.append((pos[0]-1, pos[1]-player))
+            if pos[1]-player <= 7 and pos[1]-player >= 0 and pos[0]+1 <= 7 and pos[0]+1 >= 0 and (pos[0]+1, pos[1]-player) == game.en_passant:
+                result.append((pos[0]+1, pos[1]-player))
+            if pos[1]-player >= 0 and pos[1]-player <= 7 and pos[0]-1 >= 0 and pos[0]-1 <= 7 and (pos[0]-1, pos[1]-player) == game.en_passant:
+                result.append((pos[0]-1, pos[1]-player))
             return result
 
 if __name__ == '__main__':
@@ -837,7 +837,7 @@ if __name__ == '__main__':
         cur = input('What piece do you want to move?\n')
         next = input('Where do you want to move the piece to?\n')
         valid = False
-        if chess_game.move(cur,next) == False:
+        if chess_game.move(cur, next) == False:
             print('Invalid move')
         else:
             valid = True
@@ -850,9 +850,9 @@ if __name__ == '__main__':
             print(f'INITIAL POSITION = {chess_game.init_pos}')
             print(f'MOVES = {chess_game.log}')
             print('\nGame Result:\n------------\n')
-            if state == [0,0,1]:
+            if state == [0, 0, 1]:
                 print('BLACK WINS\n')
-            elif state == [1,0,0]:
+            elif state == [1, 0, 0]:
                 print('WHITE WINS\n')
             else:
                 print('TIE GAME\n')
