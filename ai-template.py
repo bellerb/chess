@@ -15,7 +15,7 @@ class Agent:
     Description: Main entrance point for AI to make moves from [This is the function called when playing games]
     Output: tuple of strings representing the curent and next moves for the AI to make
     """
-    def choose_action(self,game):
+    def choose_action(self, game):
         cur = 'a2'
         next = 'a4'
-        return cur,next
+        return cur, next
