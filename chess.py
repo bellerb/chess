@@ -30,6 +30,7 @@ class Chess:
         self.p_move = 1 #Current players move white = 1 black = -1
         self.castling = [1,1,1,1] #Castling control
         self.en_passant = None #En passant control
+        self.prev_move = None #Previous move
         self.board = [[0,0,0,0,0,0,0,0],
                       [0,0,0,0,0,0,0,0],
                       [0,0,0,0,0,0,0,0],
@@ -185,59 +186,10 @@ class Chess:
         else:
             p_name = self.parts[int(part) if part > 0 else int(part)*(-1)] #Get name of part
             move = str(getattr(Chess,p_name)().notation).upper() #Get part notation
-            if self.board[next_pos[0]][next_pos[1]] != 0 or (next_pos == self.en_passant and (part == 1 or part == -1)): #Check if there is a capture
+            if self.board[next_pos[1]][next_pos[0]] != 0 or (next_pos == self.en_passant and (part == 1 or part == -1)): #Check if there is a capture
                 move += 'x' if move != '' else str(cur_cord)[0] + 'x'
             move += str(next_cord).lower()
         self.log.append(move)
-
-    """
-    Input: cp - tuple containing the current position
-           np - tuple containing the next position
-    Description: updates the game variables
-    Output: boolean representing the state of the function
-    """
-    def update_state(cp,np):
-        part = self.board[cp[1]][cp[0]]
-        if np == self.en_passant and (part == 1 or part == -1):
-            self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
-        self.log_move(part,cur_pos,next_pos,cp,np)
-        if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
-            self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
-        elif part == 6*self.p_move and np[0]-cp[0] == 2:
-            self.board[np[1]][np[0]-1] = 4*self.p_move
-            self.board[np[1]][np[0]+1] = 0
-        elif part == 6*self.p_move and np[0]-cp[0] == -2:
-            self.board[np[1]][np[0]+1] = 4*self.p_move
-            self.board[np[1]][np[0]-2] = 0
-        else:
-            self.en_passant = None
-        if part == 6*self.p_move:
-            if self.p_move == 1:
-                self.castling[0] = 0
-                self.castling[1] = 0
-            else:
-                self.castling[2] = 0
-                self.castling[3] = 0
-        elif part == 4*self.p_move:
-            if self.p_move == 1:
-                if cp == (0,7):
-                    self.castling[1] = 0
-                else:
-                    self.castling[0] = 0
-            else:
-                if cp == (0,0):
-                    self.castling[3] = 0
-                else:
-                    self.castling[2] = 0
-        self.board[cp[1]][cp[0]] = 0
-        self.board[np[1]][np[0]] = part
-        hash = self.EPD_hash()
-        if hash in self.EPD_table:
-            self.EPD_table[hash] += 1
-        else:
-            self.EPD_table[hash] = 1
-        return True
-
 
     """
     Input: cur_cord - string representing the current cordinate of the peice
@@ -249,7 +201,47 @@ class Chess:
         cp = self.board_2_array(cur_pos)
         np = self.board_2_array(next_pos)
         if self.valid_move(cp,np) == True:
-            update_state(cp,np) #Update game state
+            part = self.board[cp[1]][cp[0]]
+            if np == self.en_passant and (part == 1 or part == -1):
+                self.board[self.en_passant[1]-(self.p_move*(-1))][self.en_passant[0]] = 0
+            self.log_move(part,cur_pos,next_pos,cp,np)
+            self.prev_move = self.board
+            if (part == 1 and np[1] == 4) or (part == -1 and np[1] == 3):
+                self.en_passant = (np[0],np[1]+1) if part == 1 else (np[0],np[1]-1)
+            elif part == 6*self.p_move and np[0]-cp[0] == 2:
+                self.board[np[1]][np[0]-1] = 4*self.p_move
+                self.board[np[1]][np[0]+1] = 0
+            elif part == 6*self.p_move and np[0]-cp[0] == -2:
+                self.board[np[1]][np[0]+1] = 4*self.p_move
+                self.board[np[1]][np[0]-2] = 0
+            else:
+                self.en_passant = None
+            if part == 6*self.p_move:
+                if self.p_move == 1:
+                    self.castling[0] = 0
+                    self.castling[1] = 0
+                else:
+                    self.castling[2] = 0
+                    self.castling[3] = 0
+            elif part == 4*self.p_move:
+                if self.p_move == 1:
+                    if cp == (0,7):
+                        self.castling[1] = 0
+                    else:
+                        self.castling[0] = 0
+                else:
+                    if cp == (0,0):
+                        self.castling[3] = 0
+                    else:
+                        self.castling[2] = 0
+            self.board[cp[1]][cp[0]] = 0
+            self.board[np[1]][np[0]] = part
+            hash = self.EPD_hash()
+            if hash in self.EPD_table:
+                self.EPD_table[hash] += 1
+            else:
+                self.EPD_table[hash] = 1
+            #self.p_move = self.p_move * (-1)
             return True
         return False
 
@@ -473,12 +465,6 @@ class Chess:
             return True
         return False
 
-    """
-    Input: moves - dictionary containing all possible moves for current game state
-           hash - string representing the current states EPD hash
-    Description: check to see if the current state is a draw
-    Output: boolean representing the state of the function
-    """
     def is_draw(self,moves,hash):
         if self.is_stalemate(moves) == True:
             return True

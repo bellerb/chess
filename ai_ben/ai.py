@@ -71,7 +71,7 @@ class Agent:
         if len(m_bank) > 0:
             cur,next = random.choice(m_bank).split('-')
         else:
-            cur,next = ''
+            cur,next = '',''
         return cur,next
 
 """
@@ -120,6 +120,7 @@ class MCTS:
         if os.path.exists(filepath):
             checkpoint = torch.load(filepath, map_location=self.Device)
             self.Model.load_state_dict(checkpoint['state_dict'])
+        self.Model.eval()
         #print('PARAM')
 
     """
@@ -176,7 +177,8 @@ class MCTS:
         if self.tree[parent_hash].Q == 0:
             #Use NN
             enc_state = self.plumbing.encode_state(game)
-            v,p = self.Model(enc_state)
+            with torch.no_grad():
+                v,p = self.Model(enc_state)
             state[torch.argmax(v).item()] = 1
             if (state == [1,0,0] and self.Player == 1) or (state == [0,0,1] and self.Player == -1):
                 self.tree[parent_hash].Q = 3 #Win

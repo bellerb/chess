@@ -1,4 +1,9 @@
 # Chess
+[![Visits Badge](https://badges.pufler.dev/visits/bellerb/chess)](#)
+[![Languages](https://img.shields.io/github/languages/count/bellerb/chess?style=flat-square
+)](#)
+[![Top Languages](https://img.shields.io/github/languages/top/bellerb/chess?style=flat-square
+)](#)
 
 ### Description
 The following is a program for playing chess in the console written in python3. The program has been built to use the computer chess standard EPD (extended position description) for loading and exporting game positions. The program also makes use of standard chess notation (English) as you would in an actual chess tournament so that the games can be universally understood and later analysed.
@@ -96,3 +101,8 @@ chess_game = Chess(EPD='1b4k1/Q7/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -') #Any E
 step 5: open your console <br>
 step 6: type the following command "cd [app directory]" <br>
 step 7: type the following command "python3 main.py"
+
+# Write Up
+To get a better understanding of why the code is written this way check out my detailed write ups:
+
+* https://medium.com/@bellerb/building-a-chess-engine-part1-9758da877be7
