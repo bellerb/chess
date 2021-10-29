@@ -1,4 +1,10 @@
 # Chess
+[![Visits Badge](https://badges.pufler.dev/visits/bellerb/chess)](#)
+[![Languages](https://img.shields.io/github/languages/count/bellerb/chess?style=flat-square
+)](#)
+[![Top Languages](https://img.shields.io/github/languages/top/bellerb/chess?style=flat-square
+)](#)
+[![Code Quality Score](https://www.code-inspector.com/project/29560/score/svg)](#)
 
 ### Description
 The following is a program for playing chess in the console written in python3. The program has been built to use the computer chess standard EPD (extended position description) for loading and exporting game positions. The program also makes use of standard chess notation (English) as you would in an actual chess tournament so that the games can be universally understood and later analysed.
