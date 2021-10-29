@@ -96,3 +96,8 @@ chess_game = Chess(EPD='1b4k1/Q7/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -') #Any E
 step 5: open your console <br>
 step 6: type the following command "cd [app directory]" <br>
 step 7: type the following command "python3 main.py"
+
+# Write Up
+To get a better understanding of why the code is written this way check out my detailed write ups:
+
+* https://medium.com/@bellerb/building-a-chess-engine-part1-9758da877be7
