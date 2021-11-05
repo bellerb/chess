@@ -106,3 +106,4 @@ step 7: type the following command "python3 main.py"
 To get a better understanding of why the code is written this way check out my detailed write ups:
 
 * https://medium.com/@bellerb/building-a-chess-engine-part1-9758da877be7
+* https://medium.com/@bellerb/building-a-chess-engine-part2-db4784e843d5
