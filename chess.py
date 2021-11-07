@@ -306,8 +306,6 @@ class Chess:
                 for a in u_moves[m]:
                     if (a not in p_blocks) and a not in g_moves:
                         g_moves.append(a)
-                    elif a in p_blocks:
-                        break
         #Check if checkmate is in posible moves
         if len(k_pos) > 0 and k_pos[0] not in p_moves:
             return [0, 0, 0]
@@ -826,6 +824,7 @@ class Chess:
             return result
 
 if __name__ == '__main__':
+    #chess_game = Chess(EPD='4kb2/rpp1p3/6p1/6Np/3Q1B2/4P2b/PPP2PPP/RN1R2K1 w - -')
     chess_game = Chess(EPD='1b4k1/Q7/p2np1/P1P2p2/1P3P2/1R5R/q6P/5rK1 b - -')
     #chess_game = Chess()
     while True:
