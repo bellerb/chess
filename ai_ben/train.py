@@ -103,6 +103,7 @@ class train:
                             imag_log = imag_log.append(t_log,ignore_index=True)
                         imag_log = imag_log.drop_duplicates()
                 print(f'w {cur.lower()}-->{next.lower()} | EPOCH:{epoch} BOARD:{game_name} MOVE:{len(log)} HASH:{chess_game.EPD_hash()}\n') if chess_game.p_move > 0 else print(f'b {cur.lower()}-->{next.lower()} | EPOCH:{epoch} BOARD:{game_name} MOVE:{len(log)} HASH:{chess_game.EPD_hash()}\n')
+            enc_game = plumbing.encode_state(chess_game)
             valid = False
             if chess_game.move(cur, next) == False:
                 print('Invalid move')
@@ -110,7 +111,7 @@ class train:
                 valid = True
                 cur_pos = chess_game.board_2_array(cur)
                 next_pos = chess_game.board_2_array(next)
-                log.append({**{f'state{i}':float(s) for i, s in enumerate(plumbing.encode_state(chess_game)[0])},
+                log.append({**{f'state{i}':float(s) for i, s in enumerate(enc_game[0])},
                             **{f'action{x}':1 if x == ((cur_pos[0]+(cur_pos[1]*8))*64)+(next_pos[0]+(next_pos[1]*8)) else 0 for x in range(4096)}})
             if (str(white).lower() == 'ai' and chess_game.p_move == 1) or (str(black).lower() == 'ai' and chess_game.p_move == -1):
                 state = chess_game.check_state(chess_game.EPD_hash())
