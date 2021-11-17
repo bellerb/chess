@@ -293,19 +293,12 @@ class Chess:
                     k_pos = (pos, a)
                 else:
                     for m in a:
-                        if m not in p_blocks:
-                            p_blocks.append(m)
+                        if (pos, m) not in p_blocks:
+                            p_blocks.append((pos, m))
             else:
                 if pos not in u_moves:
                     u_moves[pos] = a
-        #Parse all blocked moves
         p_moves = [m for a in u_moves.values() for m in a]
-        g_moves = []
-        for m in u_moves:
-            if m not in p_blocks:
-                for a in u_moves[m]:
-                    if (a not in p_blocks) and a not in g_moves:
-                        g_moves.append(a)
         #Check if checkmate is in posible moves
         if len(k_pos) > 0 and k_pos[0] not in p_moves:
             return [0, 0, 0]
@@ -315,21 +308,27 @@ class Chess:
                     k_pos = ((row.index(self.King().value*(self.p_move*(-1))), y), [])
                     break
         if len(k_pos) > 0 and k_pos[0] in p_moves:
-            if k_pos[0] not in g_moves:
-                if len(self.log) > 0 and self.log[-1][-1] is not '+':
-                    self.log[-1] += '+' #Check
-                return [0, 0, 0]
+            for m in p_blocks:
+                i_game = deepcopy(self)
+                i_game.p_move = i_game.p_move * (-1)
+                i_game.move(f'{self.x[m[0][0]]}{self.y[m[0][1]]}', f'{self.x[m[1][0]]}{self.y[m[1][1]]}') #Move king
+                i_game.p_move = i_game.p_move * (-1)
+                i_moves = i_game.possible_board_moves(capture=True) #Imaginary moves
+                if True not in [True for k in i_moves if k_pos[0] in i_moves[k]]: #Check if moved king still in check
+                    if len(self.log) > 0 and self.log[-1][-1] is not '+':
+                        self.log[-1] += '+' #Check
+                    return [0, 0, 0]
             for m in k_pos[1]:
-                if m not in g_moves:
-                    i_game = deepcopy(self)
-                    i_game.p_move = i_game.p_move * (-1)
-                    i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}', f'{self.x[m[0]]}{self.y[m[1]]}') #Move king
-                    i_game.p_move = i_game.p_move * (-1)
-                    i_moves = i_game.possible_board_moves(capture=True) #Imaginary moves
-                    if True not in [True for k in i_moves if m in i_moves[k]]: #Check if moved king still in check
-                        if len(self.log) > 0 and self.log[-1][-1] is not '+':
-                            self.log[-1] += '+' #Check
-                        return [0, 0, 0]
+                #if m not in g_moves:
+                i_game = deepcopy(self)
+                i_game.p_move = i_game.p_move * (-1)
+                i_game.move(f'{self.x[k_pos[0][0]]}{self.y[k_pos[0][1]]}', f'{self.x[m[0]]}{self.y[m[1]]}') #Move king
+                i_game.p_move = i_game.p_move * (-1)
+                i_moves = i_game.possible_board_moves(capture=True) #Imaginary moves
+                if True not in [True for k in i_moves if m in i_moves[k]]: #Check if moved king still in check
+                    if len(self.log) > 0 and self.log[-1][-1] is not '+':
+                        self.log[-1] += '+' #Check
+                    return [0, 0, 0]
             if self.p_move == -1:
                 self.log[-1] += '#'
                 return [0, 0, 1] #Black wins
